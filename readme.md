@@ -12,19 +12,19 @@
 
 ![KPI 卡片 + 4 张表的 1:N 关系连线](docs/screenshots/dashboard-01-kpi-er-diagram.png)
 
-| ② 时间戳解析与 CPU 指标 | ③ 网络 / 磁盘折线图 |
+| ② 时间戳解析与 CPU 折线图 | ③ 网络 / 磁盘折线图 |
 |:---:|:---:|
 | ![时间戳解析表 + CPU 使用率/空闲率折线图](docs/screenshots/dashboard-02-timestamp-cpu.png) | ![网络入/出带宽 + 磁盘 sda/sdb 使用率](docs/screenshots/dashboard-03-network-disk.png) |
 
-| ④ 内存 / 雷达图 / 采样数 | ⑤ 机房分组箱线图 + 主机汇总表 |
-|:---:|:---:|
-| ![内存柱状图 + 关键指标雷达图 + 每小时采样数](docs/screenshots/dashboard-04-memory-radar-samples.png) | ![按机房分组箱线图 + 主机汇总表（CPU/MEM/disk）](docs/screenshots/dashboard-05-boxplot-host-table.png) |
-
 ### 移动端适配大屏
 
-| ⑥ KPI 卡片与 E-R 关系（移动端单列布局） | ⑦ 指标字典 + PREF_TSAR + 时间戳解析 + CPU（移动端单列布局） |
+| ① KPI 卡片与 E-R 关系 | ② 指标字典 + PREF_TSAR |
 |:---:|:---:|
 | ![移动端 KPI + HOST_DETAIL + DISK_TSAR](docs/screenshots/mobile-01-kpi-er-diagram.png) | ![移动端 MOD_DETAIL + PREF_TSAR + 时间戳解析](docs/screenshots/mobile-02-metrics-timestamp-cpu.png) |
+
+| ③ 内存柱状图 / 雷达图 / 采样数 | ④ 机房分组箱线图 + 主机汇总表 |
+|:---:|:---:|
+| ![移动端内存柱状图 + 雷达图 + 每小时采样数](docs/screenshots/mobile-03-memory-radar-samples.png) | ![移动端箱线图 + 主机汇总表](docs/screenshots/mobile-04-boxplot-host-table.png) |
 
 ---
 
