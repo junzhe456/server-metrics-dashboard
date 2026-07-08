@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>服务器监控数据可视化大屏 | 数据建模作业</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- ECharts 5 -->
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+  <!-- Mermaid 10 （用于渲染 E-R 图） -->
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.esm.min.mjs";
+    mermaid.initialize({ startOnLoad: false, theme: "dark", securityLevel: "loose" });
+    window.__mermaid = mermaid;
+  </script>
+  <style>
+    :root {
+      --bg: #06142e;
+      --panel: rgba(12, 36, 74, 0.72);
+      --panel-border: #1f4a8a;
+      --accent: #3ea6ff;
+      --accent-2: #6ee7b7;
+      --warn: #fbbf24;
+      --text: #e6f1ff;
+      --muted: #8ea6c8;
+      --good: #22d3ee;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background:
+        radial-gradient(1200px 600px at 20% 0%, #14366b 0%, transparent 60%),
+        radial-gradient(1000px 500px at 100% 100%, #0e2a55 0%, transparent 60%),
+        linear-gradient(180deg, #050e22 0%, #06142e 100%);
+      color: var(--text);
+      font-family: "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, Segoe UI, Arial, sans-serif;
+    }
+    header.topbar {
+      padding: 14px 24px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(62, 166, 255, 0.18);
+    }
+    header.topbar h1 {
+      margin: 0;
+      font-size: 22px;
+      letter-spacing: 2px;
+      background: linear-gradient(90deg, #3ea6ff, #6ee7b7);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    header.topbar .meta {
+      color: var(--muted);
+      font-size: 13px;
+    }
+    header.topbar .meta span.k { color: var(--accent); margin-right: 4px; }
+    .pdf-btn {
+      display: inline-block;
+      padding: 5px 12px;
+      margin-left: 8px;
+      border: 1px solid var(--accent);
+      border-radius: 20px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 12px;
+      background: rgba(62, 166, 255, 0.08);
+      transition: background 0.2s;
+    }
+    .pdf-btn:hover { background: rgba(62, 166, 255, 0.25); }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1.1fr 1.2fr 1.1fr;
+      grid-template-rows: auto auto auto;
+      gap: 14px;
+      padding: 14px 20px 24px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(62, 166, 255, 0.08);
+      padding: 12px 14px 14px;
+      min-height: 260px;
+    }
+    .panel h2 {
+      margin: 0 0 8px 0;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: 1px;
+      border-left: 3px solid var(--accent);
+      padding-left: 8px;
+    }
+    .panel .hint {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    /* 顶部统计卡 */
+    .kpis {
+      grid-column: 1 / span 3;
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 12px;
+    }
+    .kpi {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .kpi .label { font-size: 12px; color: var(--muted); }
+    .kpi .value { font-size: 22px; font-weight: 700; color: var(--text); }
+    .kpi .sub { font-size: 12px; color: var(--accent-2); }
+
+    /* ER 图面板（仿图样式：深色 + 表格化实体 + 关系连线） */
+    .er { grid-column: 1 / span 2; }
+    .er .er-stage {
+      position: relative;
+      background: linear-gradient(160deg, #0c1030 0%, #0b1430 55%, #111a42 100%);
+      border: 1px solid rgba(120, 200, 255, 0.18);
+      border-radius: 10px;
+      padding: 24px 18px;
+      min-height: 520px;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto;
+      gap: 70px 80px;
+    }
+    .er .er-svg {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .er .er-table {
+      position: relative;
+      z-index: 2;
+      min-width: 220px;
+      max-width: 440px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(120, 200, 255, 0.35);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(120, 200, 255, 0.08);
+      border-radius: 4px;
+      overflow: hidden;
+      font-size: 12px;
+      color: #e8f0ff;
+    }
+    .er .er-table-head {
+      background: linear-gradient(90deg, #1b2870 0%, #3a2d90 100%);
+      color: #ffffff;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      padding: 8px 10px;
+      border-bottom: 1px solid rgba(120, 200, 255, 0.45);
+      text-align: center;
+    }
+    .er .er-table-row {
+      display: grid;
+      grid-template-columns: 92px 1fr 140px 120px;
+      align-items: center;
+      padding: 5px 10px;
+      border-bottom: 1px dashed rgba(120, 200, 255, 0.18);
+    }
+    .er .er-table-row:last-child { border-bottom: 0; }
+    .er .er-type {
+      font-family: "Consolas", "Menlo", monospace;
+      color: #7ee0ff;
+    }
+    .er .er-name {
+      font-family: "Consolas", "Menlo", monospace;
+      color: #ffeb99;
+      font-weight: 600;
+    }
+    .er .er-key {
+      text-align: center;
+      color: #ff8d8d;
+      font-weight: 700;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+    }
+    .er .er-key:empty::before {
+      content: "·";
+      color: rgba(255, 255, 255, 0.2);
+      font-weight: 400;
+    }
+    .er .er-cn {
+      text-align: right;
+      color: #b8c9ff;
+    }
+
+    /* 时间戳解析面板 */
+    .ts-panel table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      color: var(--text);
+    }
+    .ts-panel th, .ts-panel td {
+      padding: 6px 8px;
+      border-bottom: 1px solid rgba(62, 166, 255, 0.15);
+      text-align: left;
+      white-space: nowrap;
+    }
+    .ts-panel th { color: var(--accent); font-weight: 600; }
+    .ts-panel td.code { font-family: "JetBrains Mono", Consolas, monospace; color: var(--warn); }
+
+    /* 图表容器 */
+    .chart { width: 100%; height: 320px; }
+    .chart-lg { height: 360px; }
+
+    /* 主机汇总表 */
+    .host-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .host-table th, .host-table td {
+      padding: 6px 8px;
+      border-bottom: 1px solid rgba(62, 166, 255, 0.15);
+      text-align: left;
+    }
+    .host-table th { color: var(--accent); }
+    .host-table tr:hover td { background: rgba(62, 166, 255, 0.06); }
+
+    .footer-note {
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+      padding: 6px 0 18px;
+    }
+
+    /* 加载态 */
+    .loading {
+      display: inline-block;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .dot {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--good);
+      margin-right: 6px;
+      box-shadow: 0 0 10px var(--good);
+    }
+    @media (max-width: 1200px) {
+      .layout { grid-template-columns: 1fr; }
+      .kpis { grid-template-columns: repeat(3, 1fr); }
+      .er { grid-column: 1 / -1; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <h1>服务器监控数据可视化大屏</h1>
+    <div class="meta">
+      <span class="k">数据源：</span>host_detail / mod_detail / disk_tsar / pref_tsar &nbsp; · &nbsp;
+      <span class="k">时区：</span>Asia/Shanghai (UTC+8) &nbsp; · &nbsp;
+      <span id="render-time" class="k">—</span>
+      <a class="pdf-btn" href="tsar_learning_report_A_dashboard.pdf">📄 下载 方案A 大屏版</a>
+      <a class="pdf-btn" href="tsar_learning_report_B_analysis.pdf">📄 下载 方案B 分析报告</a>
+    </div>
+  </header>
+
+  <!-- KPI 顶部卡片 -->
+  <section class="layout">
+    <div class="kpis" id="kpis">
+      <div class="kpi"><span class="label">主机数量</span><span class="value" id="kpi-hosts">-</span><span class="sub">host_detail</span></div>
+      <div class="kpi"><span class="label">指标（MOD）数量</span><span class="value" id="kpi-mods">-</span><span class="sub">mod_detail</span></div>
+      <div class="kpi"><span class="label">磁盘采样数</span><span class="value" id="kpi-disk">-</span><span class="sub">disk_tsar</span></div>
+      <div class="kpi"><span class="label">性能采样数</span><span class="value" id="kpi-pref">-</span><span class="sub">pref_tsar</span></div>
+      <div class="kpi"><span class="label">时间覆盖</span><span class="value" id="kpi-range">-</span><span class="sub">小时数 / 天数</span></div>
+      <div class="kpi"><span class="label">小时级聚合记录</span><span class="value" id="kpi-agg">-</span><span class="sub">(avg, max, min, count)</span></div>
+    </div>
+
+    <!-- ER 关系图 -->
+    <div class="panel er">
+      <h2>① E-R 关系图（4 张表 · 4 条 1:N 关联）</h2>
+      <div class="hint">
+        维度表 <b>HOST_DETAIL</b>（主机）、<b>MOD_DETAIL</b>（指标字典）；
+        事实表 <b>DISK_TSAR</b>（磁盘 5 分钟采样）、<b>PREF_TSAR</b>（性能 1 小时采样）。
+      </div>
+      <div class="er-stage" id="er-stage">
+        <svg class="er-svg" id="er-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+
+        <div class="er-table" id="t-host">
+          <div class="er-table-head">HOST_DETAIL · 主机信息明细表</div>
+          <div class="er-table-row"><span class="er-type">varchar(32)</span><span class="er-name">hostid</span><span class="er-key">PK</span><span class="er-cn">主机ID</span></div>
+          <div class="er-table-row"><span class="er-type">varchar(128)</span><span class="er-name">hostname</span><span class="er-key"></span><span class="er-cn">主机FQDN</span></div>
+          <div class="er-table-row"><span class="er-type">varchar(64)</span><span class="er-name">owner</span><span class="er-key"></span><span class="er-cn">负责人</span></div>
+          <div class="er-table-row"><span class="er-type">varchar(64)</span><span class="er-name">model</span><span class="er-key"></span><span class="er-cn">型号</span></div>
+          <div class="er-table-row"><span class="er-type">varchar(32)</span><span class="er-name">location1</span><span class="er-key"></span><span class="er-cn">机房</span></div>
+          <div class="er-table-row"><span class="er-type">varchar(64)</span><span class="er-name">location2</span><span class="er-key"></span><span class="er-cn">机柜</span></div>
+        </div>
+
+        <div class="er-table" id="t-mod">
+          <div class="er-table-head">MOD_DETAIL · 指标字典表</div>
+          <div class="er-table-row"><span class="er-type">varchar(64)</span><span class="er-name">mod</span><span class="er-key">PK</span><span class="er-cn">指标代码</span></div>
+          <div class="er-table-row"><span class="er-type">varchar(16)</span><span class="er-name">type</span><span class="er-key"></span><span class="er-cn">disk / pref</span></div>
+          <div class="er-table-row"><span class="er-type">varchar(128)</span><span class="er-name">desc</span><span class="er-key"></span><span class="er-cn">中文说明</span></div>
+          <div class="er-table-row"><span class="er-type">varchar(32)</span><span class="er-name">unit</span><span class="er-key"></span><span class="er-cn">单位</span></div>
+          <div class="er-table-row"><span class="er-type">varchar(64)</span><span class="er-name">tag</span><span class="er-key"></span><span class="er-cn">分类标签</span></div>
+        </div>
+
+        <div class="er-table" id="t-disk">
+          <div class="er-table-head">DISK_TSAR · 磁盘监控采集（5 分钟/次）</div>
+          <div class="er-table-row"><span class="er-type">bigint</span><span class="er-name">ts</span><span class="er-key">PK</span><span class="er-cn">毫秒时间戳</span></div>
+          <div class="er-table-row"><span class="er-type">varchar(32)</span><span class="er-name">hostid</span><span class="er-key">FK → HOST_DETAIL.hostid</span><span class="er-cn">主机ID</span></div>
+          <div class="er-table-row"><span class="er-type">varchar(16)</span><span class="er-name">type</span><span class="er-key"></span><span class="er-cn">固定为 disk</span></div>
+          <div class="er-table-row"><span class="er-type">varchar(64)</span><span class="er-name">mod</span><span class="er-key">FK → MOD_DETAIL.mod</span><span class="er-cn">指标代码</span></div>
+          <div class="er-table-row"><span class="er-type">double</span><span class="er-name">value</span><span class="er-key"></span><span class="er-cn">采集数值</span></div>
+          <div class="er-table-row"><span class="er-type">varchar(64)</span><span class="er-name">tag</span><span class="er-key"></span><span class="er-cn">分类标签</span></div>
+        </div>
+
+        <div class="er-table" id="t-pref">
+          <div class="er-table-head">PREF_TSAR · 性能监控采集（1 小时/次）</div>
+          <div class="er-table-row"><span class="er-type">bigint</span><span class="er-name">ts</span><span class="er-key">PK</span><span class="er-cn">毫秒时间戳</span></div>
+          <div class="er-table-row"><span class="er-type">varchar(32)</span><span class="er-name">hostid</span><span class="er-key">FK → HOST_DETAIL.hostid</span><span class="er-cn">主机ID</span></div>
+          <div class="er-table-row"><span class="er-type">varchar(16)</span><span class="er-name">type</span><span class="er-key"></span><span class="er-cn">固定为 pref</span></div>
+          <div class="er-table-row"><span class="er-type">varchar(64)</span><span class="er-name">mod</span><span class="er-key">FK → MOD_DETAIL.mod</span><span class="er-cn">指标代码</span></div>
+          <div class="er-table-row"><span class="er-type">double</span><span class="er-name">value</span><span class="er-key"></span><span class="er-cn">采集数值</span></div>
+          <div class="er-table-row"><span class="er-type">varchar(64)</span><span class="er-name">tag</span><span class="er-key"></span><span class="er-cn">分类标签</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 时间戳解析表 -->
+    <div class="panel ts-panel">
+      <h2>② 时间戳解析：毫秒 → 年月日时分</h2>
+      <div class="hint">
+        输入一串大整数（毫秒） → 输出 Beijing 时区的 <code>YYYY-MM-DD HH:mm</code>。
+      </div>
+      <div id="ts-range" class="hint"></div>
+      <table>
+        <thead>
+          <tr><th>原始 ts (ms)</th><th>北京时区</th><th>小时槽</th><th>星期</th></tr>
+        </thead>
+        <tbody id="ts-tbody"><tr><td colspan="4" class="loading">正在加载...</td></tr></tbody>
+      </table>
+    </div>
+
+    <!-- 图表 1: CPU 小时级折线 -->
+    <div class="panel">
+      <h2>③-1 CPU 使用率 / 空闲率（按小时平均）</h2>
+      <div class="hint">avg(cpu_usage)、avg(cpu_idle) — 20 台主机平均，横轴按小时。</div>
+      <div id="chart-cpu" class="chart chart-lg"></div>
+    </div>
+
+    <!-- 图表 2: 网络入/出 -->
+    <div class="panel">
+      <h2>③-2 网络入/出带宽（按小时平均）</h2>
+      <div class="hint">avg(net_in)、avg(net_out) 单位 MB/s — 20 台主机平均。</div>
+      <div id="chart-net" class="chart chart-lg"></div>
+    </div>
+
+    <!-- 图表 3: 磁盘使用率 -->
+    <div class="panel">
+      <h2>③-3 磁盘 sda / sdb 使用率（按小时平均）</h2>
+      <div class="hint">avg(sda_util)、avg(sdb_util) 单位 %。</div>
+      <div id="chart-disk" class="chart chart-lg"></div>
+    </div>
+
+    <!-- 图表 4: 内存使用（柱状） -->
+    <div class="panel">
+      <h2>③-4 内存已用小时平均（柱状）</h2>
+      <div class="hint">avg(mem_used) 单位 MB。</div>
+      <div id="chart-mem" class="chart chart-lg"></div>
+    </div>
+
+    <!-- 图表 5: 关键指标 max/avg（混合） -->
+    <div class="panel">
+      <h2>③-5 关键指标 Max / Avg（雷达）</h2>
+      <div class="hint">20 台主机整体聚合后的 6 个关键指标平均值 / 最大值对比。</div>
+      <div id="chart-radar" class="chart chart-lg"></div>
+    </div>
+
+    <!-- 图表 6: 采样数分布 -->
+    <div class="panel">
+      <h2>③-6 每小时采样数（分钟级计数）</h2>
+      <div class="hint">性能采样：每小时每条记录代表 1 次采样；磁盘采样：5 分钟一次。</div>
+      <div id="chart-samples" class="chart chart-lg"></div>
+    </div>
+
+    <!-- 主机汇总表 -->
+    <div class="panel" style="grid-column: 1 / span 3;">
+      <h2>④ 主机 × 关键指标汇总（cpu_usage / mem_used / sda_util 平均）</h2>
+      <div class="hint">供老师快速校验每个主机的整体负载水平。</div>
+      <div style="max-height: 340px; overflow: auto;">
+        <table class="host-table" id="host-table">
+          <thead>
+            <tr>
+              <th>hostid</th><th>hostname</th><th>owner</th><th>model</th>
+              <th>location1</th><th>location2</th>
+              <th>cpu_usage_avg</th><th>mem_used_avg (MB)</th><th>sda_util_avg</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <div class="footer-note">
+    数据清洗：process_data.py · 输出目录：./output · 本页面可直接双击打开（需网络加载 CDN），或通过本地 http server 打开。
+  </div>
+
+<script>
+  // --------- 工具函数 ---------
+  async function loadJSON(name) {
+    const res = await fetch("./output/" + name, { cache: "no-store" });
+    if (!res.ok) throw new Error("Failed to load " + name);
+    return res.json();
+  }
+
+  const fmtInt = (n) => (Number.isFinite(n) ? n.toLocaleString("zh-CN") : "-");
+  const fmt1 = (n) => (Number.isFinite(n) ? Number(n).toFixed(1) : "-");
+  const fmt2 = (n) => (Number.isFinite(n) ? Number(n).toFixed(2) : "-");
+
+  // --------- 主流程 ---------
+  (async function main() {
+    try {
+      const [host, mod, disk, pref, ts, agg] = await Promise.all([
+        loadJSON("host_detail.json"),
+        loadJSON("mod_detail.json"),
+        loadJSON("disk_tsar.json"),
+        loadJSON("pref_tsar.json"),
+        loadJSON("timestamp_samples.json"),
+        loadJSON("hourly_aggregation.json"),
+      ]);
+
+      // 顶部 KPI
+      document.getElementById("kpi-hosts").textContent = fmtInt(host.length);
+      document.getElementById("kpi-mods").textContent = fmtInt(mod.length);
+      document.getElementById("kpi-disk").textContent = fmtInt(disk.length);
+      document.getElementById("kpi-pref").textContent = fmtInt(pref.length);
+      document.getElementById("kpi-range").textContent =
+        `${ts.range.hours_span} h / ${ts.range.days_span} d`;
+      document.getElementById("kpi-agg").textContent = fmtInt(
+        agg.by_host_and_mod.disk.total_records + agg.by_host_and_mod.pref.total_records
+      );
+      document.getElementById("render-time").textContent =
+        "render: " + new Date().toLocaleString("zh-CN", { hour12: false });
+
+      // 时间戳解析表
+      const tsTbody = document.getElementById("ts-tbody");
+      tsTbody.innerHTML = "";
+      document.getElementById("ts-range").textContent =
+        `时间范围：${ts.range.start.yyyy_mm_dd_hh_mi_ss} ～ ${ts.range.end.yyyy_mm_dd_hh_mi_ss} · ${ts.timezone}`;
+      (ts.samples || []).forEach((s) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="code">${s.ts_ms}</td>
+          <td>${s.yyyy_mm_dd_hh_mi_ss}</td>
+          <td>${s.hour_slot}</td>
+          <td>${s.weekday}</td>`;
+        tsTbody.appendChild(tr);
+      });
+
+      // 主机汇总表
+      const hostTbody = document.querySelector("#host-table tbody");
+      hostTbody.innerHTML = "";
+      (agg.host_summary || []).forEach((h) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${h.hostid}</td>
+          <td>${h.hostname}</td>
+          <td>${h.owner}</td>
+          <td>${h.model}</td>
+          <td>${h.location1}</td>
+          <td>${h.location2}</td>
+          <td>${fmt2(h.cpu_usage_avg)}</td>
+          <td>${fmt2(h.mem_used_avg)}</td>
+          <td>${fmt2(h.sda_util_avg)}</td>`;
+        hostTbody.appendChild(tr);
+      });
+
+      // --------- 图表渲染 ---------
+      const cpuSeries  = agg.by_hour_and_mod.pref.series;
+      const diskSeries = agg.by_hour_and_mod.disk.series;
+      const prefSlots  = agg.by_hour_and_mod.pref.hour_slots;
+      const diskSlots  = agg.by_hour_and_mod.disk.hour_slots;
+
+      // 1) CPU 折线
+      const chartCpu = echarts.init(document.getElementById("chart-cpu"));
+      chartCpu.setOption({
+        tooltip: { trigger: "axis" },
+        legend: { textStyle: { color: "#e6f1ff" }, top: 0 },
+        grid: { left: 48, right: 24, top: 32, bottom: 48 },
+        xAxis: {
+          type: "category",
+          data: prefSlots,
+          axisLabel: { color: "#8ea6c8", rotate: 30, fontSize: 10 },
+        },
+        yAxis: [
+          {
+            type: "value", name: "%", nameTextStyle: { color: "#8ea6c8" },
+            axisLabel: { color: "#8ea6c8" }, splitLine: { lineStyle: { color: "rgba(62,166,255,0.15)" } },
+          },
+        ],
+        dataZoom: [{ type: "inside", start: 0, end: 100 }, { type: "slider", height: 18, bottom: 6 }],
+        series: [
+          {
+            name: "cpu_usage (avg)", type: "line", smooth: true, symbol: "none",
+            data: cpuSeries.cpu_usage.map((x) => x.value),
+            itemStyle: { color: "#3ea6ff" }, areaStyle: { opacity: 0.25 },
+          },
+          {
+            name: "cpu_idle (avg)", type: "line", smooth: true, symbol: "none",
+            data: cpuSeries.cpu_idle.map((x) => x.value),
+            itemStyle: { color: "#6ee7b7" },
+          },
+        ],
+      });
+
+      // 2) 网络折线
+      const chartNet = echarts.init(document.getElementById("chart-net"));
+      chartNet.setOption({
+        tooltip: { trigger: "axis" },
+        legend: { textStyle: { color: "#e6f1ff" }, top: 0 },
+        grid: { left: 52, right: 24, top: 32, bottom: 48 },
+        xAxis: {
+          type: "category", data: prefSlots,
+          axisLabel: { color: "#8ea6c8", rotate: 30, fontSize: 10 },
+        },
+        yAxis: {
+          type: "value", name: "MB/s", nameTextStyle: { color: "#8ea6c8" },
+          axisLabel: { color: "#8ea6c8" }, splitLine: { lineStyle: { color: "rgba(62,166,255,0.15)" } },
+        },
+        dataZoom: [{ type: "inside" }, { type: "slider", height: 18, bottom: 6 }],
+        series: [
+          { name: "net_in (avg)",  type: "line", smooth: true, symbol: "none", itemStyle: { color: "#fbbf24" }, data: cpuSeries.net_in.map((x) => x.value) },
+          { name: "net_out (avg)", type: "line", smooth: true, symbol: "none", itemStyle: { color: "#f472b6" }, data: cpuSeries.net_out.map((x) => x.value) },
+        ],
+      });
+
+      // 3) 磁盘使用率
+      const chartDisk = echarts.init(document.getElementById("chart-disk"));
+      chartDisk.setOption({
+        tooltip: { trigger: "axis" },
+        legend: { textStyle: { color: "#e6f1ff" }, top: 0 },
+        grid: { left: 48, right: 24, top: 32, bottom: 48 },
+        xAxis: {
+          type: "category", data: diskSlots,
+          axisLabel: { color: "#8ea6c8", rotate: 30, fontSize: 10 },
+        },
+        yAxis: {
+          type: "value", name: "%", nameTextStyle: { color: "#8ea6c8" },
+          axisLabel: { color: "#8ea6c8" }, splitLine: { lineStyle: { color: "rgba(62,166,255,0.15)" } },
+        },
+        dataZoom: [{ type: "inside" }, { type: "slider", height: 18, bottom: 6 }],
+        series: [
+          { name: "sda_util (avg)", type: "line", smooth: true, symbol: "none", itemStyle: { color: "#22d3ee" }, data: diskSeries.sda_util.map((x) => x.value) },
+          { name: "sdb_util (avg)", type: "line", smooth: true, symbol: "none", itemStyle: { color: "#a78bfa" }, data: diskSeries.sdb_util.map((x) => x.value) },
+        ],
+      });
+
+      // 4) 内存柱状（取性能数据每小时平均）
+      const chartMem = echarts.init(document.getElementById("chart-mem"));
+      chartMem.setOption({
+        tooltip: { trigger: "axis" },
+        legend: { textStyle: { color: "#e6f1ff" }, top: 0 },
+        grid: { left: 64, right: 24, top: 32, bottom: 48 },
+        xAxis: {
+          type: "category", data: prefSlots,
+          axisLabel: { color: "#8ea6c8", rotate: 30, fontSize: 10 },
+        },
+        yAxis: {
+          type: "value", name: "MB", nameTextStyle: { color: "#8ea6c8" },
+          axisLabel: { color: "#8ea6c8" }, splitLine: { lineStyle: { color: "rgba(62,166,255,0.15)" } },
+        },
+        dataZoom: [{ type: "inside" }, { type: "slider", height: 18, bottom: 6 }],
+        series: [
+          {
+            name: "mem_used (avg)", type: "bar",
+            itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: "#6ee7b7" }, { offset: 1, color: "#1d4ed8" },
+            ])},
+            data: cpuSeries.mem_used.map((x) => x.value),
+          },
+        ],
+      });
+
+      // 5) 雷达：关键指标 max / avg
+      function seriesStat(key) {
+        const arr = (cpuSeries[key] || []).filter((x) => Number.isFinite(x.value));
+        if (!arr.length) return { avg: 0, max: 0 };
+        const vals = arr.map((x) => x.value);
+        return { avg: vals.reduce((a, b) => a + b, 0) / vals.length, max: Math.max(...vals) };
+      }
+      const radarItems = [
+        { name: "cpu_usage", key: "cpu_usage",  max: 100 },
+        { name: "mem_used /1000", key: "mem_used", normalize: 1000, max: 120 },
+        { name: "net_in", key: "net_in", max: 400 },
+        { name: "net_out", key: "net_out", max: 400 },
+        { name: "load1", key: "load1", max: 20 },
+        { name: "cpu_idle", key: "cpu_idle", max: 100 },
+      ];
+      const avgVec = radarItems.map((r) => {
+        const s = seriesStat(r.key);
+        return Number((s.avg / (r.normalize || 1)).toFixed(2));
+      });
+      const maxVec = radarItems.map((r) => {
+        const s = seriesStat(r.key);
+        return Number((s.max / (r.normalize || 1)).toFixed(2));
+      });
+      const chartRadar = echarts.init(document.getElementById("chart-radar"));
+      chartRadar.setOption({
+        tooltip: {},
+        legend: { textStyle: { color: "#e6f1ff" }, top: 0 },
+        radar: {
+          indicator: radarItems.map((r) => ({ name: r.name, max: r.max })),
+          axisName: { color: "#e6f1ff" },
+          splitArea: { areaStyle: { color: ["rgba(62,166,255,0.05)", "rgba(62,166,255,0.1)"] } },
+          splitLine: { lineStyle: { color: "rgba(62,166,255,0.25)" } },
+          axisLine: { lineStyle: { color: "rgba(62,166,255,0.35)" } },
+        },
+        series: [
+          {
+            type: "radar",
+            data: [
+              { value: avgVec, name: "小时级平均值", areaStyle: { color: "rgba(62,166,255,0.35)" }, lineStyle: { color: "#3ea6ff" }, itemStyle: { color: "#3ea6ff" } },
+              { value: maxVec, name: "小时内最大值", areaStyle: { color: "rgba(251,191,36,0.25)" }, lineStyle: { color: "#fbbf24" }, itemStyle: { color: "#fbbf24" } },
+            ],
+          },
+        ],
+      });
+
+      // 6) 每小时采样数（性能）
+      const sampleData = cpuSeries.cpu_usage.map((x) => ({ hour: x.hour_slot, n: x.sample_count || 0 }));
+      const chartSamples = echarts.init(document.getElementById("chart-samples"));
+      chartSamples.setOption({
+        tooltip: { trigger: "axis" },
+        grid: { left: 48, right: 24, top: 32, bottom: 48 },
+        xAxis: {
+          type: "category", data: sampleData.map((x) => x.hour),
+          axisLabel: { color: "#8ea6c8", rotate: 30, fontSize: 10 },
+        },
+        yAxis: {
+          type: "value", name: "样本数", nameTextStyle: { color: "#8ea6c8" },
+          axisLabel: { color: "#8ea6c8" }, splitLine: { lineStyle: { color: "rgba(62,166,255,0.15)" } },
+        },
+        dataZoom: [{ type: "inside" }, { type: "slider", height: 18, bottom: 6 }],
+        series: [
+          {
+            type: "bar", name: "sample_count",
+            itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: "#a78bfa" }, { offset: 1, color: "#1e3a8a" },
+            ])},
+            data: sampleData.map((x) => x.n),
+          },
+        ],
+      });
+
+      // 自适应
+      window.addEventListener("resize", () => {
+        [chartCpu, chartNet, chartDisk, chartMem, chartRadar, chartSamples].forEach((c) => c.resize());
+      });
+
+      // E-R 关系图：4 张表之间画关系线 + 中文标签
+      (function drawERLinks() {
+        const svg = document.getElementById("er-svg");
+        const stage = document.getElementById("er-stage");
+        if (!svg || !stage) return;
+
+        const tables = {
+          host: document.getElementById("t-host"),
+          mod:  document.getElementById("t-mod"),
+          disk: document.getElementById("t-disk"),
+          pref: document.getElementById("t-pref"),
+        };
+
+        function anchor(el, side /* 'left' | 'right' | 'top' | 'bottom' */) {
+          const stageRect = stage.getBoundingClientRect();
+          const r = el.getBoundingClientRect();
+          const x = r.left - stageRect.left + stage.scrollLeft;
+          const y = r.top - stageRect.top + stage.scrollTop;
+          if (side === "left")   return { x: x,          y: y + r.height / 2 };
+          if (side === "right")  return { x: x + r.width, y: y + r.height / 2 };
+          if (side === "top")    return { x: x + r.width / 2, y: y };
+          if (side === "bottom") return { x: x + r.width / 2, y: y + r.height };
+          return { x: x + r.width / 2, y: y + r.height / 2 };
+        }
+
+        function arrowDef(svg) {
+          if (document.getElementById("er-arrow-1")) return;
+          svg.insertAdjacentHTML("afterbegin",
+            '<defs>' +
+              '<marker id="er-arrow-1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">' +
+                '<path d="M 0 0 L 10 5 L 0 10 z" fill="#7ee0ff" stroke="#7ee0ff" stroke-width="0.5"></path>' +
+              '</marker>' +
+              '<marker id="er-arrow-2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">' +
+                '<path d="M 0 0 L 10 5 L 0 10 z" fill="#fbbf24" stroke="#fbbf24" stroke-width="0.5"></path>' +
+              '</marker>' +
+            '</defs>');
+        }
+
+        function drawLink(from, to, label, color) {
+          // 采用：从上方向下方连，若 from 在上方用 bottom，to 在上方用 top
+          // 这里简化：水平左右连时用 right→left；上下连时用 bottom→top
+          const fromRect = from.getBoundingClientRect();
+          const toRect = to.getBoundingClientRect();
+          const stageRect = stage.getBoundingClientRect();
+
+          const isHorizontal = Math.abs((fromRect.top + fromRect.bottom) / 2 - (toRect.top + toRect.bottom) / 2) < 120;
+
+          let a, b;
+          if (isHorizontal) {
+            // 左边的表连右，右边的表连左
+            if (fromRect.left < toRect.left) {
+              a = anchor(from, "right"); b = anchor(to, "left");
+            } else {
+              a = anchor(from, "left"); b = anchor(to, "right");
+            }
+          } else {
+            // 上面的表连下，下面的表连上
+            if (fromRect.top < toRect.top) {
+              a = anchor(from, "bottom"); b = anchor(to, "top");
+            } else {
+              a = anchor(from, "top"); b = anchor(to, "bottom");
+            }
+          }
+
+          const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+          const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+          if (isHorizontal) {
+            path.setAttribute("d", `M ${a.x} ${a.y} C ${mx} ${a.y}, ${mx} ${b.y}, ${b.x} ${b.y}`);
+          } else {
+            path.setAttribute("d", `M ${a.x} ${a.y} C ${a.x} ${my}, ${b.x} ${my}, ${b.x} ${b.y}`);
+          }
+          path.setAttribute("fill", "none");
+          path.setAttribute("stroke", color);
+          path.setAttribute("stroke-width", "1.6");
+          path.setAttribute("stroke-dasharray", "6 4");
+          path.setAttribute("marker-end", color === "#7ee0ff" ? "url(#er-arrow-1)" : "url(#er-arrow-2)");
+          svg.appendChild(path);
+
+          const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          text.setAttribute("x", mx);
+          text.setAttribute("y", my - 6);
+          text.setAttribute("text-anchor", "middle");
+          text.setAttribute("fill", color);
+          text.setAttribute("font-size", "12");
+          text.setAttribute("font-weight", "600");
+          text.setAttribute("style", "paint-order: stroke; stroke: rgba(10,16,40,0.85); stroke-width: 4;");
+          text.textContent = label;
+          svg.appendChild(text);
+
+          // 1 / N 小圆标
+          const markers = [
+            { near: a, text: "1", color: color },
+            { near: b, text: "N", color: color },
+          ];
+          markers.forEach((m, i) => {
+            const dirX = (b.x - a.x), dirY = (b.y - a.y);
+            const len = Math.sqrt(dirX * dirX + dirY * dirY) || 1;
+            const nx = dirX / len, ny = dirY / len;
+            const offset = i === 0 ? 18 : -18;
+            const cx = m.near.x + nx * offset;
+            const cy = m.near.y + ny * offset;
+
+            const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            circle.setAttribute("cx", cx);
+            circle.setAttribute("cy", cy);
+            circle.setAttribute("r", 9);
+            circle.setAttribute("fill", "#0b1230");
+            circle.setAttribute("stroke", color);
+            circle.setAttribute("stroke-width", "1.5");
+            svg.appendChild(circle);
+
+            const lbl = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            lbl.setAttribute("x", cx);
+            lbl.setAttribute("y", cy + 4);
+            lbl.setAttribute("text-anchor", "middle");
+            lbl.setAttribute("fill", color);
+            lbl.setAttribute("font-size", "11");
+            lbl.setAttribute("font-weight", "700");
+            lbl.textContent = m.text;
+            svg.appendChild(lbl);
+          });
+        }
+
+        function render() {
+          const stageRect = stage.getBoundingClientRect();
+          svg.setAttribute("width", stageRect.width);
+          svg.setAttribute("height", stageRect.height);
+          svg.setAttribute("viewBox", `0 0 ${stageRect.width} ${stageRect.height}`);
+          while (svg.firstChild && svg.firstChild.tagName !== "defs") svg.removeChild(svg.firstChild);
+          // 若 defs 不存在也清理
+          while (svg.firstChild) svg.removeChild(svg.firstChild);
+          arrowDef(svg);
+
+          // HOST_DETAIL -> DISK_TSAR (bottom to top, 青色)
+          drawLink(tables.host, tables.disk, "1 主机 → N 次磁盘采集（5 分钟/次）", "#7ee0ff");
+          // HOST_DETAIL -> PREF_TSAR (青色)
+          drawLink(tables.host, tables.pref, "1 主机 → N 次性能采集（1 小时/次）", "#7ee0ff");
+          // MOD_DETAIL -> DISK_TSAR (金黄)
+          drawLink(tables.mod, tables.disk, "1 指标 → N 次出现在磁盘采集", "#fbbf24");
+          // MOD_DETAIL -> PREF_TSAR (金黄)
+          drawLink(tables.mod, tables.pref, "1 指标 → N 次出现在性能采集", "#fbbf24");
+        }
+
+        render();
+        window.addEventListener("resize", render);
+      })();
+
+    } catch (err) {
+      console.error(err);
+      document.body.insertAdjacentHTML(
+        "afterbegin",
+        `<div style="background:#7f1d1d;color:#fff;padding:12px 18px;">
+           加载失败：${err.message}<br />
+           请确认已执行 <code>python process_data.py</code> 生成 <code>./output/*.json</code>，
+           并通过 HTTP 服务（如 <code>python -m http.server</code>）打开本页面（直接双击打开部分浏览器会因 CORS 限制无法 fetch JSON）。
+         </div>`
+      );
+    }
+  })();
+</script>
+</body>
+</html>

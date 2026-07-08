@@ -1,0 +1,23 @@
+# Byte-compiled / optimized files
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Large binary outputs (可本地生成)
+*.pdf
+output/figures/
+
+# OS
+.DS_Store
+Thumbs.db

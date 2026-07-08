@@ -1,0 +1,387 @@
+[
+  {
+    "mod": "sda_rqm",
+    "type": "disk",
+    "desc": "磁盘A每秒合并读请求数",
+    "unit": "req/s",
+    "tag": "disk_rqm_per_sec"
+  },
+  {
+    "mod": "sdb_rqm",
+    "type": "disk",
+    "desc": "磁盘B每秒合并读请求数",
+    "unit": "req/s",
+    "tag": "disk_rqm_per_sec"
+  },
+  {
+    "mod": "sdc_rqm",
+    "type": "disk",
+    "desc": "磁盘C每秒合并读请求数",
+    "unit": "req/s",
+    "tag": "disk_rqm_per_sec"
+  },
+  {
+    "mod": "sdd_rqm",
+    "type": "disk",
+    "desc": "磁盘D每秒合并读请求数",
+    "unit": "req/s",
+    "tag": "disk_rqm_per_sec"
+  },
+  {
+    "mod": "sde_rqm",
+    "type": "disk",
+    "desc": "磁盘E每秒合并读请求数",
+    "unit": "req/s",
+    "tag": "disk_rqm_per_sec"
+  },
+  {
+    "mod": "sda_read",
+    "type": "disk",
+    "desc": "磁盘A每秒读取扇区数",
+    "unit": "sectors/s",
+    "tag": "disk_rw_sectors"
+  },
+  {
+    "mod": "sdb_read",
+    "type": "disk",
+    "desc": "磁盘B每秒读取扇区数",
+    "unit": "sectors/s",
+    "tag": "disk_rw_sectors"
+  },
+  {
+    "mod": "sdc_read",
+    "type": "disk",
+    "desc": "磁盘C每秒读取扇区数",
+    "unit": "sectors/s",
+    "tag": "disk_rw_sectors"
+  },
+  {
+    "mod": "sdd_read",
+    "type": "disk",
+    "desc": "磁盘D每秒读取扇区数",
+    "unit": "sectors/s",
+    "tag": "disk_rw_sectors"
+  },
+  {
+    "mod": "sde_read",
+    "type": "disk",
+    "desc": "磁盘E每秒读取扇区数",
+    "unit": "sectors/s",
+    "tag": "disk_rw_sectors"
+  },
+  {
+    "mod": "sda_write",
+    "type": "disk",
+    "desc": "磁盘A每秒写入扇区数",
+    "unit": "sectors/s",
+    "tag": "disk_rw_sectors"
+  },
+  {
+    "mod": "sdb_write",
+    "type": "disk",
+    "desc": "磁盘B每秒写入扇区数",
+    "unit": "sectors/s",
+    "tag": "disk_rw_sectors"
+  },
+  {
+    "mod": "sdc_write",
+    "type": "disk",
+    "desc": "磁盘C每秒写入扇区数",
+    "unit": "sectors/s",
+    "tag": "disk_rw_sectors"
+  },
+  {
+    "mod": "sdd_write",
+    "type": "disk",
+    "desc": "磁盘D每秒写入扇区数",
+    "unit": "sectors/s",
+    "tag": "disk_rw_sectors"
+  },
+  {
+    "mod": "sde_write",
+    "type": "disk",
+    "desc": "磁盘E每秒写入扇区数",
+    "unit": "sectors/s",
+    "tag": "disk_rw_sectors"
+  },
+  {
+    "mod": "sda_avgrq",
+    "type": "disk",
+    "desc": "磁盘A平均请求扇区大小",
+    "unit": "sectors",
+    "tag": "disk_other_metric"
+  },
+  {
+    "mod": "sdb_avgrq",
+    "type": "disk",
+    "desc": "磁盘B平均请求扇区大小",
+    "unit": "sectors",
+    "tag": "disk_other_metric"
+  },
+  {
+    "mod": "sdc_avgrq",
+    "type": "disk",
+    "desc": "磁盘C平均请求扇区大小",
+    "unit": "sectors",
+    "tag": "disk_other_metric"
+  },
+  {
+    "mod": "sdd_avgrq",
+    "type": "disk",
+    "desc": "磁盘D平均请求扇区大小",
+    "unit": "sectors",
+    "tag": "disk_other_metric"
+  },
+  {
+    "mod": "sde_avgrq",
+    "type": "disk",
+    "desc": "磁盘E平均请求扇区大小",
+    "unit": "sectors",
+    "tag": "disk_other_metric"
+  },
+  {
+    "mod": "sda_await",
+    "type": "disk",
+    "desc": "磁盘A平均I/O等待时间",
+    "unit": "ms",
+    "tag": "disk_latency_ms"
+  },
+  {
+    "mod": "sdb_await",
+    "type": "disk",
+    "desc": "磁盘B平均I/O等待时间",
+    "unit": "ms",
+    "tag": "disk_latency_ms"
+  },
+  {
+    "mod": "sdc_await",
+    "type": "disk",
+    "desc": "磁盘C平均I/O等待时间",
+    "unit": "ms",
+    "tag": "disk_latency_ms"
+  },
+  {
+    "mod": "sdd_await",
+    "type": "disk",
+    "desc": "磁盘D平均I/O等待时间",
+    "unit": "ms",
+    "tag": "disk_latency_ms"
+  },
+  {
+    "mod": "sde_await",
+    "type": "disk",
+    "desc": "磁盘E平均I/O等待时间",
+    "unit": "ms",
+    "tag": "disk_latency_ms"
+  },
+  {
+    "mod": "sda_util",
+    "type": "disk",
+    "desc": "磁盘A使用率",
+    "unit": "%",
+    "tag": "disk_util_percent"
+  },
+  {
+    "mod": "sdb_util",
+    "type": "disk",
+    "desc": "磁盘B使用率",
+    "unit": "%",
+    "tag": "disk_util_percent"
+  },
+  {
+    "mod": "sdc_util",
+    "type": "disk",
+    "desc": "磁盘C使用率",
+    "unit": "%",
+    "tag": "disk_util_percent"
+  },
+  {
+    "mod": "sdd_util",
+    "type": "disk",
+    "desc": "磁盘D使用率",
+    "unit": "%",
+    "tag": "disk_util_percent"
+  },
+  {
+    "mod": "sde_util",
+    "type": "disk",
+    "desc": "磁盘E使用率",
+    "unit": "%",
+    "tag": "disk_util_percent"
+  },
+  {
+    "mod": "sda_svctm",
+    "type": "disk",
+    "desc": "磁盘A平均服务时间",
+    "unit": "ms",
+    "tag": "disk_latency_ms"
+  },
+  {
+    "mod": "sdb_svctm",
+    "type": "disk",
+    "desc": "磁盘B平均服务时间",
+    "unit": "ms",
+    "tag": "disk_latency_ms"
+  },
+  {
+    "mod": "sdc_svctm",
+    "type": "disk",
+    "desc": "磁盘C平均服务时间",
+    "unit": "ms",
+    "tag": "disk_latency_ms"
+  },
+  {
+    "mod": "sdd_svctm",
+    "type": "disk",
+    "desc": "磁盘D平均服务时间",
+    "unit": "ms",
+    "tag": "disk_latency_ms"
+  },
+  {
+    "mod": "sde_svctm",
+    "type": "disk",
+    "desc": "磁盘E平均服务时间",
+    "unit": "ms",
+    "tag": "disk_latency_ms"
+  },
+  {
+    "mod": "cpu_user",
+    "type": "pref",
+    "desc": "用户态CPU使用率",
+    "unit": "%",
+    "tag": "cpu_percent"
+  },
+  {
+    "mod": "cpu_sys",
+    "type": "pref",
+    "desc": "系统态CPU使用率",
+    "unit": "%",
+    "tag": "cpu_percent"
+  },
+  {
+    "mod": "cpu_wait",
+    "type": "pref",
+    "desc": "IO等待CPU使用率",
+    "unit": "%",
+    "tag": "cpu_percent"
+  },
+  {
+    "mod": "cpu_idle",
+    "type": "pref",
+    "desc": "CPU空闲率",
+    "unit": "%",
+    "tag": "cpu_percent"
+  },
+  {
+    "mod": "cpu_usage",
+    "type": "pref",
+    "desc": "CPU综合使用率",
+    "unit": "%",
+    "tag": "cpu_percent"
+  },
+  {
+    "mod": "mem_used",
+    "type": "pref",
+    "desc": "已使用内存",
+    "unit": "MB",
+    "tag": "mem_metric"
+  },
+  {
+    "mod": "mem_free",
+    "type": "pref",
+    "desc": "空闲内存",
+    "unit": "MB",
+    "tag": "mem_metric"
+  },
+  {
+    "mod": "mem_buff",
+    "type": "pref",
+    "desc": "缓冲区内存",
+    "unit": "MB",
+    "tag": "mem_metric"
+  },
+  {
+    "mod": "mem_cache",
+    "type": "pref",
+    "desc": "缓存内存",
+    "unit": "MB",
+    "tag": "mem_metric"
+  },
+  {
+    "mod": "mem_swap",
+    "type": "pref",
+    "desc": "交换区使用",
+    "unit": "MB",
+    "tag": "mem_metric"
+  },
+  {
+    "mod": "net_in",
+    "type": "pref",
+    "desc": "网络入站带宽",
+    "unit": "MB/s",
+    "tag": "net_speed_mb"
+  },
+  {
+    "mod": "net_out",
+    "type": "pref",
+    "desc": "网络出站带宽",
+    "unit": "MB/s",
+    "tag": "net_speed_mb"
+  },
+  {
+    "mod": "net_pktin",
+    "type": "pref",
+    "desc": "每秒入站数据包数",
+    "unit": "pkt/s",
+    "tag": "net_packets"
+  },
+  {
+    "mod": "net_pktout",
+    "type": "pref",
+    "desc": "每秒出站数据包数",
+    "unit": "pkt/s",
+    "tag": "net_packets"
+  },
+  {
+    "mod": "load1",
+    "type": "pref",
+    "desc": "1分钟平均负载",
+    "unit": "",
+    "tag": "load_average"
+  },
+  {
+    "mod": "load5",
+    "type": "pref",
+    "desc": "5分钟平均负载",
+    "unit": "",
+    "tag": "load_average"
+  },
+  {
+    "mod": "load15",
+    "type": "pref",
+    "desc": "15分钟平均负载",
+    "unit": "",
+    "tag": "load_average"
+  },
+  {
+    "mod": "proc_run",
+    "type": "pref",
+    "desc": "运行中进程数",
+    "unit": "个",
+    "tag": "proc_count"
+  },
+  {
+    "mod": "proc_block",
+    "type": "pref",
+    "desc": "阻塞进程数",
+    "unit": "个",
+    "tag": "proc_count"
+  },
+  {
+    "mod": "proc_total",
+    "type": "pref",
+    "desc": "总进程数",
+    "unit": "个",
+    "tag": "proc_count"
+  }
+]

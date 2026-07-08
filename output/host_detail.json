@@ -1,0 +1,162 @@
+[
+  {
+    "hostid": "host001",
+    "hostname": "server-001.hismartlab.cn",
+    "owner": "陈三",
+    "model": "Dell R750",
+    "location1": "A机房",
+    "location2": "机柜12"
+  },
+  {
+    "hostid": "host002",
+    "hostname": "server-002.hismartlab.cn",
+    "owner": "钱七",
+    "model": "HP DL388",
+    "location1": "B机房",
+    "location2": "机柜03"
+  },
+  {
+    "hostid": "host003",
+    "hostname": "server-003.hismartlab.cn",
+    "owner": "林四",
+    "model": "Dell R750",
+    "location1": "E机房",
+    "location2": "机柜02"
+  },
+  {
+    "hostid": "host004",
+    "hostname": "server-004.hismartlab.cn",
+    "owner": "王二",
+    "model": "Huawei 2288H",
+    "location1": "A机房",
+    "location2": "机柜01"
+  },
+  {
+    "hostid": "host005",
+    "hostname": "server-005.hismartlab.cn",
+    "owner": "李四",
+    "model": "HP DL388",
+    "location1": "B机房",
+    "location2": "机柜09"
+  },
+  {
+    "hostid": "host006",
+    "hostname": "server-006.hismartlab.cn",
+    "owner": "王二",
+    "model": "Dell R740",
+    "location1": "E机房",
+    "location2": "机柜04"
+  },
+  {
+    "hostid": "host007",
+    "hostname": "server-007.hismartlab.cn",
+    "owner": "林四",
+    "model": "Huawei 2288H",
+    "location1": "B机房",
+    "location2": "机柜08"
+  },
+  {
+    "hostid": "host008",
+    "hostname": "server-008.hismartlab.cn",
+    "owner": "王二",
+    "model": "Lenovo SR650",
+    "location1": "A机房",
+    "location2": "机柜03"
+  },
+  {
+    "hostid": "host009",
+    "hostname": "server-009.hismartlab.cn",
+    "owner": "林四",
+    "model": "Huawei 2288H",
+    "location1": "C机房",
+    "location2": "机柜05"
+  },
+  {
+    "hostid": "host010",
+    "hostname": "server-010.hismartlab.cn",
+    "owner": "王五",
+    "model": "HP DL388",
+    "location1": "C机房",
+    "location2": "机柜02"
+  },
+  {
+    "hostid": "host011",
+    "hostname": "server-011.hismartlab.cn",
+    "owner": "李四",
+    "model": "Huawei 2288H",
+    "location1": "A机房",
+    "location2": "机柜06"
+  },
+  {
+    "hostid": "host012",
+    "hostname": "server-012.hismartlab.cn",
+    "owner": "刘六",
+    "model": "Lenovo SR860",
+    "location1": "E机房",
+    "location2": "机柜05"
+  },
+  {
+    "hostid": "host013",
+    "hostname": "server-013.hismartlab.cn",
+    "owner": "黄五",
+    "model": "Dell R740",
+    "location1": "D机房",
+    "location2": "机柜09"
+  },
+  {
+    "hostid": "host014",
+    "hostname": "server-014.hismartlab.cn",
+    "owner": "李四",
+    "model": "Huawei 2288H",
+    "location1": "A机房",
+    "location2": "机柜09"
+  },
+  {
+    "hostid": "host015",
+    "hostname": "server-015.hismartlab.cn",
+    "owner": "钱七",
+    "model": "Lenovo SR860",
+    "location1": "E机房",
+    "location2": "机柜04"
+  },
+  {
+    "hostid": "host016",
+    "hostname": "server-016.hismartlab.cn",
+    "owner": "林四",
+    "model": "Dell R750",
+    "location1": "A机房",
+    "location2": "机柜11"
+  },
+  {
+    "hostid": "host017",
+    "hostname": "server-017.hismartlab.cn",
+    "owner": "赵六",
+    "model": "Lenovo SR650",
+    "location1": "A机房",
+    "location2": "机柜04"
+  },
+  {
+    "hostid": "host018",
+    "hostname": "server-018.hismartlab.cn",
+    "owner": "刘六",
+    "model": "Dell R750",
+    "location1": "D机房",
+    "location2": "机柜05"
+  },
+  {
+    "hostid": "host019",
+    "hostname": "server-019.hismartlab.cn",
+    "owner": "吴十",
+    "model": "Lenovo SR860",
+    "location1": "B机房",
+    "location2": "机柜06"
+  },
+  {
+    "hostid": "host020",
+    "hostname": "server-020.hismartlab.cn",
+    "owner": "孙八",
+    "model": "HP DL388",
+    "location1": "C机房",
+    "location2": "机柜12"
+  }
+]

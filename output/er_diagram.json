@@ -1,0 +1,169 @@
+{
+  "entities": [
+    {
+      "name": "host_detail",
+      "description": "主机信息明细表（维度表）",
+      "primary_key": [
+        "hostid"
+      ],
+      "attributes": [
+        {
+          "name": "hostid",
+          "type": "string",
+          "comment": "主机ID（主键）"
+        },
+        {
+          "name": "hostname",
+          "type": "string",
+          "comment": "主机FQDN名"
+        },
+        {
+          "name": "owner",
+          "type": "string",
+          "comment": "负责人"
+        },
+        {
+          "name": "model",
+          "type": "string",
+          "comment": "硬件型号"
+        },
+        {
+          "name": "location1",
+          "type": "string",
+          "comment": "机房位置"
+        },
+        {
+          "name": "location2",
+          "type": "string",
+          "comment": "机柜编号"
+        }
+      ],
+      "row_count": 20
+    },
+    {
+      "name": "mod_detail",
+      "description": "指标(MOD)字典表（维度表）",
+      "primary_key": [
+        "mod"
+      ],
+      "attributes": [
+        {
+          "name": "mod",
+          "type": "string",
+          "comment": "指标代码（主键）"
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "comment": "资源类型 disk/pref"
+        },
+        {
+          "name": "desc",
+          "type": "string",
+          "comment": "指标中文说明"
+        },
+        {
+          "name": "unit",
+          "type": "string",
+          "comment": "单位"
+        },
+        {
+          "name": "tag",
+          "type": "string",
+          "comment": "指标分类标签"
+        }
+      ],
+      "row_count": 55
+    },
+    {
+      "name": "tsar_detail",
+      "description": "监控采集明细表（事实表）= disk_tsar + pref_tsar",
+      "primary_key": [
+        "ts",
+        "hostid",
+        "mod"
+      ],
+      "attributes": [
+        {
+          "name": "ts",
+          "type": "long (ms)",
+          "comment": "采集时间戳（毫秒）"
+        },
+        {
+          "name": "hostid",
+          "type": "string",
+          "comment": "主机ID（外键 → host_detail.hostid）"
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "comment": "资源类型 disk/pref"
+        },
+        {
+          "name": "mod",
+          "type": "string",
+          "comment": "指标代码（外键 → mod_detail.mod）"
+        },
+        {
+          "name": "value",
+          "type": "double",
+          "comment": "采集数值"
+        },
+        {
+          "name": "tag",
+          "type": "string",
+          "comment": "指标分类标签"
+        }
+      ],
+      "row_count": 79200,
+      "sub_tables": [
+        {
+          "name": "disk_tsar",
+          "type": "disk",
+          "row_count": 12000
+        },
+        {
+          "name": "pref_tsar",
+          "type": "pref",
+          "row_count": 67200
+        }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "from": "host_detail",
+      "to": "tsar_detail",
+      "type": "1:N",
+      "on": [
+        "hostid"
+      ],
+      "description": "一台主机产生多条采集记录"
+    },
+    {
+      "from": "mod_detail",
+      "to": "tsar_detail",
+      "type": "1:N",
+      "on": [
+        "mod"
+      ],
+      "description": "一个指标出现在多条采集记录中"
+    }
+  ],
+  "keys": {
+    "host_hostid_sample": [
+      "host001",
+      "host002",
+      "host003",
+      "host004",
+      "host005"
+    ],
+    "mod_sample": [
+      "sda_rqm",
+      "sdb_rqm",
+      "sdc_rqm",
+      "sdd_rqm",
+      "sde_rqm"
+    ]
+  }
+}
