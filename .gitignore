@@ -30,8 +30,6 @@ logs/
 *.pdf
 output/figures/
 output/figures/*.png
-docs/screenshots/
-docs/screenshots/*.png
 
 # ==================== Node.js (未来可能引入) ====================
 node_modules/

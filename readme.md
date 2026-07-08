@@ -6,7 +6,25 @@
 
 ## 项目预览
 
-项目大屏截图可通过浏览器访问后手动截取，约定路径为 `docs/screenshots/dashboard-1920x1080.png`，目前尚未生成自动化截图脚本。
+### PC 端大屏
+
+| ① 核心指标与 E-R 关系图
+
+![KPI 卡片 + 4 张表的 1:N 关系连线](docs/screenshots/dashboard-01-kpi-er-diagram.png)
+
+| ② 时间戳解析与 CPU 指标 | ③ 网络 / 磁盘折线图 |
+|:---:|:---:|
+| ![时间戳解析表 + CPU 使用率/空闲率折线图](docs/screenshots/dashboard-02-timestamp-cpu.png) | ![网络入/出带宽 + 磁盘 sda/sdb 使用率](docs/screenshots/dashboard-03-network-disk.png) |
+
+| ④ 内存 / 雷达图 / 采样数 | ⑤ 机房分组箱线图 + 主机汇总表 |
+|:---:|:---:|
+| ![内存柱状图 + 关键指标雷达图 + 每小时采样数](docs/screenshots/dashboard-04-memory-radar-samples.png) | ![按机房分组箱线图 + 主机汇总表（CPU/MEM/disk）](docs/screenshots/dashboard-05-boxplot-host-table.png) |
+
+### 移动端适配大屏
+
+| ⑥ KPI 卡片与 E-R 关系（移动端单列布局） | ⑦ 指标字典 + PREF_TSAR + 时间戳解析 + CPU（移动端单列布局） |
+|:---:|:---:|
+| ![移动端 KPI + HOST_DETAIL + DISK_TSAR](docs/screenshots/mobile-01-kpi-er-diagram.png) | ![移动端 MOD_DETAIL + PREF_TSAR + 时间戳解析](docs/screenshots/mobile-02-metrics-timestamp-cpu.png) |
 
 ---
 
