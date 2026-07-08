@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>服务器监控数据可视化 · 移动端</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#06142e" />
+  <!-- ECharts 5 -->
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+  <style>
+    :root {
+      --bg: #06142e;
+      --panel: rgba(12, 36, 74, 0.78);
+      --panel-border: #1f4a8a;
+      --accent: #3ea6ff;
+      --accent-2: #6ee7b7;
+      --warn: #fbbf24;
+      --text: #e6f1ff;
+      --muted: #8ea6c8;
+      --good: #22d3ee;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background:
+        radial-gradient(800px 400px at 20% 0%, #14366b 0%, transparent 60%),
+        radial-gradient(700px 400px at 100% 100%, #0e2a55 0%, transparent 60%),
+        linear-gradient(180deg, #050e22 0%, #06142e 100%);
+      color: var(--text);
+      font-family: "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, Segoe UI, Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+    /* 顶部栏：移动端紧凑 */
+    header.topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      padding: 10px 12px;
+      background: linear-gradient(180deg, rgba(6, 20, 46, 0.96), rgba(6, 20, 46, 0.9));
+      border-bottom: 1px solid rgba(62, 166, 255, 0.25);
+      backdrop-filter: blur(6px);
+    }
+    header.topbar .row1 {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    header.topbar h1 {
+      margin: 0;
+      font-size: 16px;
+      letter-spacing: 1px;
+      background: linear-gradient(90deg, #3ea6ff, #6ee7b7);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .topbar a.pc-btn {
+      flex-shrink: 0;
+      padding: 4px 10px;
+      border: 1px solid var(--accent);
+      border-radius: 20px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 12px;
+      background: rgba(62, 166, 255, 0.08);
+    }
+    header.topbar .meta {
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 6px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    header.topbar .meta span.k { color: var(--accent); }
+
+    /* 主体：单列卡片纵向布局 */
+    .layout {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 12px 10px 24px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(62, 166, 255, 0.06);
+      padding: 10px 12px 12px;
+    }
+    .panel h2 {
+      margin: 0 0 4px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--accent);
+      letter-spacing: 0.5px;
+      border-left: 3px solid var(--accent);
+      padding-left: 8px;
+    }
+    .panel .hint {
+      font-size: 11.5px;
+      color: var(--muted);
+      margin-bottom: 6px;
+      line-height: 1.55;
+    }
+
+    /* KPI：2 列卡片 */
+    .kpis {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .kpi {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 10px;
+      padding: 10px 10px 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .kpi .label { font-size: 11px; color: var(--muted); }
+    .kpi .value { font-size: 18px; font-weight: 700; color: var(--text); line-height: 1.2; }
+    .kpi .sub { font-size: 10.5px; color: var(--accent-2); }
+
+    /* ER 面板：四张表纵向堆叠，表之间用关系说明连接 */
+    .er .er-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .er-table {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(120, 200, 255, 0.35);
+      border-radius: 6px;
+      overflow: hidden;
+      font-size: 11.5px;
+      color: #e8f0ff;
+    }
+    .er-table-head {
+      background: linear-gradient(90deg, #1b2870, #3a2d90);
+      color: #fff;
+      font-weight: 700;
+      padding: 6px 10px;
+      text-align: center;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid rgba(120, 200, 255, 0.35);
+    }
+    .er-table-row {
+      display: grid;
+      grid-template-columns: 72px 1fr 78px 72px;
+      align-items: center;
+      padding: 4px 8px;
+      border-bottom: 1px dashed rgba(120, 200, 255, 0.18);
+    }
+    .er-table-row:last-child { border-bottom: 0; }
+    .er-type { font-family: Consolas, Menlo, monospace; color: #7ee0ff; }
+    .er-name { font-family: Consolas, Menlo, monospace; color: #ffeb99; font-weight: 600; }
+    .er-key { text-align: center; color: #ff8d8d; font-weight: 700; font-size: 10.5px; letter-spacing: 0.5px; }
+    .er-key:empty::before { content: "·"; color: rgba(255, 255, 255, 0.25); font-weight: 400; }
+    .er-cn { text-align: right; color: #b8c9ff; font-size: 11px; }
+    .er-rel {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      color: var(--accent);
+      font-size: 11px;
+      padding: 2px 0;
+    }
+    .er-rel::before, .er-rel::after {
+      content: "";
+      width: 22px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(126, 224, 255, 0.6), transparent);
+    }
+    .er-rel.rel-warn { color: var(--warn); }
+    .er-rel.rel-warn::before, .er-rel.rel-warn::after {
+      background: linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.55), transparent);
+    }
+
+    /* 时间戳表：可横向滚动 */
+    .ts-panel .ts-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .ts-panel table {
+      width: 100%;
+      min-width: 360px;
+      border-collapse: collapse;
+      font-size: 11.5px;
+    }
+    .ts-panel th, .ts-panel td {
+      padding: 5px 6px;
+      border-bottom: 1px solid rgba(62, 166, 255, 0.15);
+      text-align: left;
+      white-space: nowrap;
+    }
+    .ts-panel th { color: var(--accent); font-weight: 600; }
+    .ts-panel td.code { font-family: Consolas, monospace; color: var(--warn); }
+
+    /* 图表容器：自适应宽度，高度按内容调整 */
+    .chart {
+      width: 100%;
+      height: 230px;
+    }
+    .chart-lg { height: 260px; }
+
+    /* 主机汇总表 */
+    .host-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .host-table {
+      width: 100%;
+      min-width: 480px;
+      border-collapse: collapse;
+      font-size: 11.5px;
+    }
+    .host-table th, .host-table td {
+      padding: 5px 6px;
+      border-bottom: 1px solid rgba(62, 166, 255, 0.15);
+      text-align: left;
+      white-space: nowrap;
+    }
+    .host-table th { color: var(--accent); }
+
+    /* 底部说明 */
+    .footer-note {
+      text-align: center;
+      color: var(--muted);
+      font-size: 11px;
+      padding: 6px 8px 0;
+    }
+
+    /* 加载态 */
+    .loading {
+      display: inline-block;
+      color: var(--muted);
+      font-size: 11.5px;
+    }
+
+    /* 中等屏（平板横屏 ≥ 768px）：2 列网格 */
+    @media (min-width: 768px) and (max-width: 1199px) {
+      .layout { display: grid; grid-template-columns: 1fr 1fr; }
+      .panel.full, .panel.er, .panel.ts-panel { grid-column: 1 / -1; }
+      .kpis { grid-template-columns: repeat(3, 1fr); }
+      .kpi .value { font-size: 20px; }
+      .chart { height: 260px; }
+      .chart-lg { height: 280px; }
+    }
+
+    /* 大屏（≥ 1200px）：保持 2 列布局并加粗标题 */
+    @media (min-width: 1200px) {
+      body { font-size: 15px; }
+      .layout { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 16px 20px 28px; }
+      .panel.full, .panel.er, .panel.ts-panel { grid-column: 1 / -1; }
+      .panel h2 { font-size: 15px; }
+      .kpis { grid-template-columns: repeat(6, 1fr); }
+      .chart { height: 300px; }
+      .chart-lg { height: 340px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="row1">
+      <h1>服务器监控数据可视化 · 移动端</h1>
+      <a class="pc-btn" href="index.html">⌨️ PC 大屏</a>
+    </div>
+    <div class="meta">
+      <span><span class="k">数据源：</span>host_detail / mod_detail / disk_tsar / pref_tsar</span>
+      <span>·</span>
+      <span><span class="k">时区：</span>Asia/Shanghai (UTC+8)</span>
+      <span>·</span>
+      <span id="render-time">—</span>
+    </div>
+  </header>
+
+  <section class="layout">
+    <!-- KPI -->
+    <div class="panel full">
+      <div class="kpis" id="kpis">
+        <div class="kpi"><span class="label">主机数量</span><span class="value" id="kpi-hosts">-</span><span class="sub">host_detail</span></div>
+        <div class="kpi"><span class="label">指标（MOD）数量</span><span class="value" id="kpi-mods">-</span><span class="sub">mod_detail</span></div>
+        <div class="kpi"><span class="label">磁盘采样数</span><span class="value" id="kpi-disk">-</span><span class="sub">disk_tsar</span></div>
+        <div class="kpi"><span class="label">性能采样数</span><span class="value" id="kpi-pref">-</span><span class="sub">pref_tsar</span></div>
+        <div class="kpi"><span class="label">时间覆盖</span><span class="value" id="kpi-range">-</span><span class="sub">小时数 / 天数</span></div>
+        <div class="kpi"><span class="label">小时级聚合</span><span class="value" id="kpi-agg">-</span><span class="sub">avg / max / min / count</span></div>
+      </div>
+    </div>
+
+    <!-- ER 关系图 -->
+    <div class="panel er">
+      <h2>E-R 关系图（4 张表 · 1:N 关联）</h2>
+      <div class="hint">维度表 <b>HOST_DETAIL</b> / <b>MOD_DETAIL</b>；事实表 <b>DISK_TSAR</b> / <b>PREF_TSAR</b>。</div>
+      <div class="er-stack" id="er-stack">
+        <div class="er-table">
+          <div class="er-table-head">HOST_DETAIL · 主机信息明细表</div>
+          <div class="er-table-row"><span class="er-type">varchar(32)</span><span class="er-name">hostid</span><span class="er-key">PK</span><span class="er-cn">主机ID</span></div>
+          <div class="er-table-row"><span class="er-type">varchar(128)</span><span class="er-name">hostname</span><span class="er-key"></span><span class="er-cn">主机FQDN</span></div>
+          <div class="er-table-row"><span class="er-type">varchar(64)</span><span class="er-name">owner</span><span class="er-key"></span><span class="er-cn">负责人</span></div>
+          <div class="er-table-row"><span class="er-type">varchar(64)</span><span class="er-name">model</span><span class="er-key"></span><span class="er-cn">型号</span></div>
+          <div class="er-table-row"><span class="er-type">varchar(32)</span><span class="er-name">location1</span><span class="er-key"></span><span class="er-cn">机房</span></div>
+          <div class="er-table-row"><span class="er-type">varchar(64)</span><span class="er-name">location2</span><span class="er-key"></span><span class="er-cn">机柜</span></div>
+        </div>
+
+        <div class="er-rel">↓ 1:N · 每台主机产生多条磁盘采集记录</div>
+
+        <div class="er-table">
+          <div class="er-table-head">DISK_TSAR · 磁盘采集（5 分钟/次）</div>
+          <div class="er-table-row"><span class="er-type">bigint</span><span class="er-name">ts</span><span class="er-key">PK</span><span class="er-cn">毫秒时间戳</span></div>
+          <div class="er-table-row"><span class="er-type">varchar(32)</span><span class="er-name">hostid</span><span class="er-key">FK</span><span class="er-cn">主机ID</span></div>
+          <div class="er-table-row"><span class="er-type">varchar(16)</span><span class="er-name">type</span><span class="er-key"></span><span class="er-cn">disk</span></div>
+          <div class="er-table-row"><span class="er-type">varchar(64)</span><span class="er-name">mod</span><span class="er-key">FK</span><span class="er-cn">指标代码</span></div>
+          <div class="er-table-row"><span class="er-type">double</span><span class="er-name">value</span><span class="er-key"></span><span class="er-cn">采集数值</span></div>
+        </div>
+
+        <div class="er-rel rel-warn">→ 1:N · 每个指标出现在多条性能采集</div>
+
+        <div class="er-table">
+          <div class="er-table-head">MOD_DETAIL · 指标字典表</div>
+          <div class="er-table-row"><span class="er-type">varchar(64)</span><span class="er-name">mod</span><span class="er-key">PK</span><span class="er-cn">指标代码</span></div>
+          <div class="er-table-row"><span class="er-type">varchar(16)</span><span class="er-name">type</span><span class="er-key"></span><span class="er-cn">disk / pref</span></div>
+          <div class="er-table-row"><span class="er-type">varchar(128)</span><span class="er-name">desc</span><span class="er-key"></span><span class="er-cn">中文说明</span></div>
+          <div class="er-table-row"><span class="er-type">varchar(32)</span><span class="er-name">unit</span><span class="er-key"></span><span class="er-cn">单位</span></div>
+          <div class="er-table-row"><span class="er-type">varchar(64)</span><span class="er-name">tag</span><span class="er-key"></span><span class="er-cn">分类标签</span></div>
+        </div>
+
+        <div class="er-rel rel-warn">↓ 1:N · 每个指标也出现在多条磁盘采集</div>
+
+        <div class="er-table">
+          <div class="er-table-head">PREF_TSAR · 性能采集（1 小时/次）</div>
+          <div class="er-table-row"><span class="er-type">bigint</span><span class="er-name">ts</span><span class="er-key">PK</span><span class="er-cn">毫秒时间戳</span></div>
+          <div class="er-table-row"><span class="er-type">varchar(32)</span><span class="er-name">hostid</span><span class="er-key">FK</span><span class="er-cn">主机ID</span></div>
+          <div class="er-table-row"><span class="er-type">varchar(16)</span><span class="er-name">type</span><span class="er-key"></span><span class="er-cn">pref</span></div>
+          <div class="er-table-row"><span class="er-type">varchar(64)</span><span class="er-name">mod</span><span class="er-key">FK</span><span class="er-cn">指标代码</span></div>
+          <div class="er-table-row"><span class="er-type">double</span><span class="er-name">value</span><span class="er-key"></span><span class="er-cn">采集数值</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 时间戳解析 -->
+    <div class="panel ts-panel">
+      <h2>时间戳解析（毫秒 → 年月日时分）</h2>
+      <div class="hint">毫秒时间戳 → Beijing 时区 <code>YYYY-MM-DD HH:mm</code> → 小时槽。</div>
+      <div id="ts-range" class="hint"></div>
+      <div class="ts-wrap">
+        <table>
+          <thead>
+            <tr><th>原始 ts (ms)</th><th>北京时区</th><th>小时槽</th><th>星期</th></tr>
+          </thead>
+          <tbody id="ts-tbody"><tr><td colspan="4" class="loading">正在加载...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- CPU -->
+    <div class="panel">
+      <h2>CPU 使用率 / 空闲率（小时平均）</h2>
+      <div class="hint">avg(cpu_usage)、avg(cpu_idle) — 20 台主机平均。</div>
+      <div id="chart-cpu" class="chart chart-lg"></div>
+    </div>
+
+    <!-- 网络 -->
+    <div class="panel">
+      <h2>网络入/出带宽（小时平均）</h2>
+      <div class="hint">MB/s · 20 台主机平均。</div>
+      <div id="chart-net" class="chart chart-lg"></div>
+    </div>
+
+    <!-- 磁盘 -->
+    <div class="panel">
+      <h2>磁盘 sda / sdb 使用率（小时平均）</h2>
+      <div class="hint">百分比，小时聚合。</div>
+      <div id="chart-disk" class="chart chart-lg"></div>
+    </div>
+
+    <!-- 内存 -->
+    <div class="panel">
+      <h2>内存已用（小时平均 · 柱状）</h2>
+      <div class="hint">MB · 20 台主机平均。</div>
+      <div id="chart-mem" class="chart chart-lg"></div>
+    </div>
+
+    <!-- 雷达 -->
+    <div class="panel">
+      <h2>关键指标：平均值 vs 最大值</h2>
+      <div class="hint">综合查看 CPU / 网络 / 磁盘 / 内存等指标。</div>
+      <div id="chart-radar" class="chart chart-lg"></div>
+    </div>
+
+    <!-- 采样数 -->
+    <div class="panel">
+      <h2>每小时采样数</h2>
+      <div class="hint">采样完整性核查。</div>
+      <div id="chart-samples" class="chart chart-lg"></div>
+    </div>
+
+    <!-- 箱线图 -->
+    <div class="panel">
+      <h2>按机房分组：CPU vs 磁盘使用率</h2>
+      <div class="hint">箱线图展示各机房主机间差异。</div>
+      <div id="chart-box" class="chart chart-lg"></div>
+    </div>
+
+    <!-- 主机汇总表 -->
+    <div class="panel">
+      <h2>主机汇总表（关键指标平均）</h2>
+      <div class="hint">按主机聚合的 CPU 平均、内存已用、磁盘 sda 平均使用率。</div>
+      <div class="host-wrap">
+        <table class="host-table" id="host-table">
+          <thead>
+            <tr><th>hostid</th><th>hostname</th><th>owner</th><th>model</th><th>机房</th><th>机柜</th><th>CPU avg%</th><th>MEM avg MB</th><th>sda avg%</th></tr>
+          </thead>
+          <tbody><tr><td colspan="9" class="loading">正在加载...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="footer-note">
+      server-metrics-dashboard · 服务器监控数据可视化（移动端视图 · 可横屏查看）
+    </div>
+  </section>
+
+<script>
+  // --------- 工具函数 ---------
+  const meta = document.querySelector('meta[name="api-base"]');
+  const API_BASE = meta && meta.content ? meta.content : "http://127.0.0.1:5001";
+
+  async function loadAPI(path) {
+    const res = await fetch(API_BASE + path, { cache: "no-store" });
+    if (!res.ok) throw new Error("API 请求失败: " + path + " " + res.status);
+    return res.json();
+  }
+
+  const fmtInt = (n) => (Number.isFinite(n) ? n.toLocaleString("zh-CN") : "-");
+  const fmt1 = (n) => (Number.isFinite(n) ? Number(n).toFixed(1) : "-");
+  const fmt2 = (n) => (Number.isFinite(n) ? Number(n).toFixed(2) : "-");
+  function pad(x) { return String(x).padStart(2, "0"); }
+  function fmtBeijing(ms) {
+    const d = new Date(Number(ms) + 8 * 3600 * 1000);
+    return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
+  }
+
+  // --------- 主流程 ---------
+  (async function main() {
+    try {
+      const [summary, samples] = await Promise.all([
+        loadAPI("/api/dashboard/summary"),
+        loadAPI("/api/disk?page_size=10"),
+      ]);
+
+      const counts = summary.counts || {};
+
+      // KPI
+      document.getElementById("kpi-hosts").textContent = fmtInt(counts.host_detail || 0);
+      document.getElementById("kpi-mods").textContent = fmtInt(counts.mod_detail || 0);
+      document.getElementById("kpi-disk").textContent = fmtInt(counts.disk_tsar || 0);
+      document.getElementById("kpi-pref").textContent = fmtInt(counts.pref_tsar || 0);
+      const cpuHourly = (summary.cpu_hourly && summary.cpu_hourly.cpu_usage) || [];
+      document.getElementById("kpi-range").textContent =
+        cpuHourly.length ? `${cpuHourly.length} h / ${(cpuHourly.length / 24).toFixed(1)} d` : "-";
+      const totalAgg =
+        (summary.cpu_hourly.cpu_usage || []).length +
+        (summary.disk_hourly.sda_util || []).length +
+        (summary.disk_hourly.sdb_util || []).length;
+      document.getElementById("kpi-agg").textContent = fmtInt(totalAgg);
+      document.getElementById("render-time").textContent = new Date().toLocaleString("zh-CN");
+
+      // 时间戳解析表（从 disk_tsar 前 10 条演示）
+      const tsTbody = document.getElementById("ts-tbody");
+      tsTbody.innerHTML = "";
+      const tsList = samples.items || [];
+      if (tsList.length) {
+        tsList.slice(0, 8).forEach((s) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML =
+            `<td class="code">${s.ts}</td>` +
+            `<td>${fmtBeijing(s.ts)}</td>` +
+            `<td>${s.dt} ${pad(Number(s.hour))}:00</td>` +
+            `<td>${new Date(Number(s.ts) + 8 * 3600 * 1000).getUTCDay() ? "" : ""}周${["日","一","二","三","四","五","六"][new Date(Number(s.ts)+8*3600*1000).getUTCDay()]}</td>`;
+          tsTbody.appendChild(tr);
+        });
+        document.getElementById("ts-range").textContent =
+          `示例时间范围：${fmtBeijing(tsList[0].ts)} ~ ${fmtBeijing(tsList[tsList.length - 1].ts)}`;
+      }
+
+      // 公共样式
+      const baseAxis = {
+        axisLine: { lineStyle: { color: "rgba(142, 166, 200, 0.45)" } },
+        axisLabel: { color: "#8ea6c8", fontSize: 10, hideOverlap: true },
+        splitLine: { lineStyle: { color: "rgba(62, 166, 255, 0.12)" } },
+      };
+      const baseTooltip = {
+        backgroundColor: "rgba(6, 20, 46, 0.92)",
+        borderColor: "rgba(62, 166, 255, 0.4)",
+        textStyle: { color: "#e6f1ff", fontSize: 11 },
+      };
+
+      // 图表数据准备
+      const cpuUsage = summary.cpu_hourly.cpu_usage || [];
+      const cpuIdle  = summary.cpu_hourly.cpu_idle || [];
+      const netIn    = summary.net_hourly.net_in || [];
+      const netOut   = summary.net_hourly.net_out || [];
+      const sdaUtil  = summary.disk_hourly.sda_util || [];
+      const sdbUtil  = summary.disk_hourly.sdb_util || [];
+      const memUsed  = summary.mem_hourly.mem_used || [];
+      const prefSlots = cpuUsage.map((x) => `${x.dt} ${pad(Number(x.hour))}`);
+      const diskSlots = sdaUtil.map((x) => `${x.dt} ${pad(Number(x.hour))}`);
+
+      // 1) CPU 折线
+      let chartCpu = null;
+      if (cpuUsage.length) {
+        chartCpu = echarts.init(document.getElementById("chart-cpu"));
+        chartCpu.setOption({
+          tooltip: { trigger: "axis" },
+          legend: { textStyle: { color: "#e6f1ff" }, top: 0 },
+          grid: { left: 48, right: 14, top: 32, bottom: 32 },
+          xAxis: { type: "category", data: prefSlots,
+            axisLabel: { color: "#8ea6c8", rotate: 30, fontSize: 9 } },
+          yAxis: { type: "value", name: "%", nameTextStyle: { color: "#8ea6c8" },
+            axisLabel: { color: "#8ea6c8" }, splitLine: { lineStyle: { color: "rgba(62,166,255,0.15)" } } },
+          dataZoom: [{ type: "inside" }],
+          series: [
+            { name: "cpu_usage", type: "line", smooth: true, symbol: "none", data: cpuUsage.map((x) => x.avg), itemStyle: { color: "#3ea6ff" }, areaStyle: { opacity: 0.25 } },
+            { name: "cpu_idle",  type: "line", smooth: true, symbol: "none", data: cpuIdle.map((x) => x.avg),  itemStyle: { color: "#6ee7b7" } },
+          ],
+        });
+      }
+
+      // 2) 网络折线
+      let chartNet = null;
+      if (netIn.length) {
+        chartNet = echarts.init(document.getElementById("chart-net"));
+        chartNet.setOption({
+          tooltip: { trigger: "axis" },
+          legend: { textStyle: { color: "#e6f1ff" }, top: 0 },
+          grid: { left: 48, right: 14, top: 32, bottom: 32 },
+          xAxis: { type: "category", data: prefSlots, axisLabel: { color: "#8ea6c8", rotate: 30, fontSize: 9 } },
+          yAxis: { type: "value", name: "MB/s", nameTextStyle: { color: "#8ea6c8" },
+            axisLabel: { color: "#8ea6c8" }, splitLine: { lineStyle: { color: "rgba(62,166,255,0.15)" } } },
+          dataZoom: [{ type: "inside" }],
+          series: [
+            { name: "net_in",  type: "line", smooth: true, symbol: "none", itemStyle: { color: "#fbbf24" }, data: netIn.map((x) => x.avg) },
+            { name: "net_out", type: "line", smooth: true, symbol: "none", itemStyle: { color: "#f472b6" }, data: netOut.map((x) => x.avg) },
+          ],
+        });
+      }
+
+      // 3) 磁盘使用率
+      let chartDisk = null;
+      if (sdaUtil.length) {
+        chartDisk = echarts.init(document.getElementById("chart-disk"));
+        chartDisk.setOption({
+          tooltip: { trigger: "axis" },
+          legend: { textStyle: { color: "#e6f1ff" }, top: 0 },
+          grid: { left: 48, right: 14, top: 32, bottom: 32 },
+          xAxis: { type: "category", data: diskSlots, axisLabel: { color: "#8ea6c8", rotate: 30, fontSize: 9 } },
+          yAxis: { type: "value", name: "%", nameTextStyle: { color: "#8ea6c8" },
+            axisLabel: { color: "#8ea6c8" }, splitLine: { lineStyle: { color: "rgba(62,166,255,0.15)" } } },
+          dataZoom: [{ type: "inside" }],
+          series: [
+            { name: "sda_util", type: "line", smooth: true, symbol: "none", itemStyle: { color: "#22d3ee" }, data: sdaUtil.map((x) => x.avg) },
+            { name: "sdb_util", type: "line", smooth: true, symbol: "none", itemStyle: { color: "#a78bfa" }, data: sdbUtil.map((x) => x.avg) },
+          ],
+        });
+      }
+
+      // 4) 内存柱状
+      let chartMem = null;
+      if (memUsed.length) {
+        chartMem = echarts.init(document.getElementById("chart-mem"));
+        chartMem.setOption({
+          tooltip: { trigger: "axis" },
+          legend: { textStyle: { color: "#e6f1ff" }, top: 0 },
+          grid: { left: 48, right: 14, top: 32, bottom: 32 },
+          xAxis: { type: "category", data: prefSlots, axisLabel: { color: "#8ea6c8", rotate: 30, fontSize: 9 } },
+          yAxis: { type: "value", name: "MB", nameTextStyle: { color: "#8ea6c8" },
+            axisLabel: { color: "#8ea6c8" }, splitLine: { lineStyle: { color: "rgba(62,166,255,0.15)" } } },
+          dataZoom: [{ type: "inside" }],
+          series: [{
+            name: "mem_used", type: "bar",
+            itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: "#6ee7b7" }, { offset: 1, color: "#1d4ed8" },
+            ])},
+            data: memUsed.map((x) => x.avg),
+          }],
+        });
+      }
+
+      // 5) 雷达
+      const radar = summary.radar || {};
+      const radarItems = [
+        { name: "cpu_usage", key: "cpu_usage", max: 100 },
+        { name: "mem_used", key: "mem_used", max: 120000 },
+        { name: "net_in", key: "net_in", max: 600 },
+        { name: "net_out", key: "net_out", max: 600 },
+        { name: "sda_util", key: "sda_util", max: 100 },
+        { name: "cpu_idle", key: "cpu_idle", max: 100 },
+      ];
+      const avgVec = radarItems.map((r) => Number(((radar[r.key] || {}).avg || 0).toFixed(2)));
+      const maxVec = radarItems.map((r) => Number(((radar[r.key] || {}).max || 0).toFixed(2)));
+      let chartRadar = null;
+      chartRadar = echarts.init(document.getElementById("chart-radar"));
+      chartRadar.setOption({
+        tooltip: {},
+        legend: { textStyle: { color: "#e6f1ff" }, top: 0 },
+        radar: {
+          indicator: radarItems.map((r) => ({ name: r.name, max: r.max })),
+          axisName: { color: "#e6f1ff", fontSize: 10 },
+        },
+        series: [
+          { name: "avg", type: "radar",
+            data: [{ value: avgVec, name: "平均", areaStyle: { color: "rgba(62, 166, 255, 0.3)" }, itemStyle: { color: "#3ea6ff" } }],
+          },
+          { name: "max", type: "radar",
+            data: [{ value: maxVec, name: "峰值", areaStyle: { color: "rgba(251, 191, 36, 0.22)" }, itemStyle: { color: "#fbbf24" } }],
+          },
+        ],
+      });
+
+      // 6) 采样数柱状
+      let chartSamples = null;
+      const sampleH = summary.samples_hourly || [];
+      if (sampleH.length) {
+        const sampleSlots = sampleH.map((x) => `${x.dt} ${pad(Number(x.hour))}`);
+        chartSamples = echarts.init(document.getElementById("chart-samples"));
+        chartSamples.setOption({
+          tooltip: { trigger: "axis" },
+          grid: { left: 48, right: 14, top: 20, bottom: 32 },
+          xAxis: { type: "category", data: sampleSlots, axisLabel: { color: "#8ea6c8", rotate: 30, fontSize: 9 } },
+          yAxis: { type: "value", name: "count", nameTextStyle: { color: "#8ea6c8" },
+            axisLabel: { color: "#8ea6c8" }, splitLine: { lineStyle: { color: "rgba(62,166,255,0.15)" } } },
+          dataZoom: [{ type: "inside" }],
+          series: [{
+            type: "bar",
+            itemStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: "#fbbf24" }, { offset: 1, color: "#ef4444" },
+            ])},
+            data: sampleH.map((x) => x.count),
+          }],
+        });
+      }
+
+      // 7) 按机房分组 箱线图
+      let chartBox = null;
+      const boxByIdc = summary.box_by_idc || { cpu_usage: {}, sda_util: {} };
+      const cpuBoxObj = boxByIdc.cpu_usage || {};
+      const diskBoxObj = boxByIdc.sda_util || {};
+      const locs = Array.from(new Set([...Object.keys(cpuBoxObj), ...Object.keys(diskBoxObj)]));
+      if (locs.length) {
+        chartBox = echarts.init(document.getElementById("chart-box"));
+        chartBox.setOption({
+          tooltip: { trigger: "item" },
+          legend: { textStyle: { color: "#e6f1ff" }, top: 0 },
+          grid: { left: 40, right: 14, top: 30, bottom: 30 },
+          xAxis: Object.assign({ type: "category", data: locs }, baseAxis),
+          yAxis: Object.assign({ type: "value", name: "%", nameTextStyle: { color: "#8ea6c8", fontSize: 10 } }, baseAxis),
+          dataZoom: [{ type: "inside" }],
+          series: [
+            { name: "cpu_usage", type: "boxplot",
+              itemStyle: { color: "rgba(62,166,255,0.35)", borderColor: "#3ea6ff" },
+              data: locs.map((loc) => cpuBoxObj[loc] || [0, 0, 0, 0, 0]),
+            },
+            { name: "sda_util", type: "boxplot",
+              itemStyle: { color: "rgba(251,191,36,0.35)", borderColor: "#fbbf24" },
+              data: locs.map((loc) => diskBoxObj[loc] || [0, 0, 0, 0, 0]),
+            },
+          ],
+        });
+      }
+
+      // 主机汇总表
+      const tbody = document.querySelector("#host-table tbody");
+      tbody.innerHTML = "";
+      (summary.host_summary || []).slice(0, 20).forEach((h) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML =
+          `<td>${h.hostid}</td>` +
+          `<td>${String(h.hostname || "").slice(0, 18)}</td>` +
+          `<td>${h.owner || ""}</td>` +
+          `<td>${h.model || ""}</td>` +
+          `<td>${h.location1 || ""}</td>` +
+          `<td>${h.location2 || ""}</td>` +
+          `<td>${fmt2(h.cpu_avg)}</td>` +
+          `<td>${fmt2(h.mem_avg)}</td>` +
+          `<td>${fmt2(h.sda_avg)}</td>`;
+        tbody.appendChild(tr);
+      });
+
+      // 响应式
+      const charts = [chartCpu, chartNet, chartDisk, chartMem, chartRadar, chartSamples, chartBox];
+      let resizeTimer = null;
+      window.addEventListener("resize", () => {
+        if (resizeTimer) cancelAnimationFrame(resizeTimer);
+        resizeTimer = requestAnimationFrame(() => charts.forEach((c) => c && c.resize()));
+      });
+    } catch (err) {
+      console.error(err);
+      document.querySelector(".layout").insertAdjacentHTML(
+        "beforeend",
+        `<div class="panel"><h2>加载失败</h2><div class="hint">${String(err)}</div><div class="hint">请确认后端 Flask 服务已在 ${API_BASE} 启动。</div></div>`,
+      );
+    }
+  })();
+</script>
+</body>
+</html>

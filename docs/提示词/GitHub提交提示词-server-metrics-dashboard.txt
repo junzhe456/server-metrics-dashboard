@@ -1,0 +1,764 @@
+# server-metrics-dashboard · GitHub 仓库提交与发布流程提示词
+
+> 适用对象：Git 工程师 / 开源项目维护者 / 发布流程专家 / 数据大屏课程助教
+>
+> 适用项目：**server-metrics-dashboard**（中文名：服务器监控数据可视化大屏）
+>
+> 运行环境：Windows + PowerShell 5.x（注意不要使用 `&&` 串联命令）
+
+---
+
+## 1. 任务目标
+
+将 `server-metrics-dashboard`（服务器监控数据可视化大屏）项目：
+
+1. **该提交的提交**：源码、配置、文档、测试、数据文件、前端页面、后端 Flask 代码、教学材料
+2. **该忽略的忽略**：依赖、构建产物、日志、缓存、数据库、系统文件、大文件、临时 PDF
+3. **该推送的推送**：推送到 GitHub 公开仓库，默认 `public`
+4. **不要破坏用户已有文件**：不要用 `git reset --hard` / `git checkout -- .` 等破坏性命令
+5. **如果已有远程 origin，优先复用**；不要重复创建仓库
+
+### 核心原则
+
+- **源码优先**：`.py`、`.html`、`.css`、`.js`、`.ts`、`.vue`、`.json` 等源码文件必须提交
+- **数据文件判断**：
+  - `.dat` 原始数据文件 → 项目教学的关键输入，必须提交
+  - `output/*.json` 清洗后的数据 → 教学用途，可提交（文件较小）
+  - `server_metrics.db` / `*.db` SQLite 数据库文件 → **不提交**（本地生成）
+  - `output/figures/*.png` → **不提交**（本地生成）
+  - `*.pdf` → **不提交**（本地生成）
+- **配置文件**：`.gitignore`、`LICENSE`、`requirements.txt` 必须提交
+- **运行日志**：`*.log`、`backend.err.log`、`backend.out.log` 等运行日志 **不提交**
+- **IDE / 系统文件**：`.vscode/`、`.idea/`、`.DS_Store`、`Thumbs.db` 等 **不提交**
+- **Python 缓存**：`__pycache__/`、`*.pyc`、`.venv/`、`venv/`、`env/` 等 **不提交**
+
+---
+
+## 2. 本项目的真实文件结构（提交前请先对照确认）
+
+```text
+数据建模作业/                        ← 项目根目录（Git 仓库在这里初始化）
+├── index.html                      # ✅ 必须提交：PC 端数据大屏
+├── mobile.html                     # ✅ 必须提交：移动端数据大屏
+├── process_data.py                 # ✅ 必须提交：数据清洗与聚合脚本
+├── generate_figures.py             # ✅ 必须提交：图表 PNG 生成脚本
+├── generate_pdf.py                 # ✅ 必须提交：PDF 报告生成脚本
+├── verify.cjs                      # ✅ 必须提交：验证脚本
+├── host_detail.dat                 # ✅ 必须提交：原始数据 .dat
+├── mod_detail.dat                  # ✅ 必须提交：原始数据 .dat
+├── disk_tsar.dat                   # ✅ 必须提交：原始数据 .dat
+├── pref_tsar.dat                   # ✅ 必须提交：原始数据 .dat
+├── query_results_sample.txt        # ✅ 必须提交：查询结果示例
+├── 9069888090f84f0193c6ea6de147428b.png  # ✅ 必须提交：参考图/素材图
+├── README.md 或 readme.md          # ✅ 必须提交
+├── LICENSE                         # ✅ 必须提交（MIT License）
+├── .gitignore                      # ✅ 必须提交（需补充规则）
+│
+├── backend/                        # ✅ 必须提交：Flask 后端代码
+│   ├── app.py                      # ✅ Flask 主应用（REST API）
+│   ├── config.py                   # ✅ 数据库配置
+│   ├── models.py                   # ✅ SQLAlchemy ORM 模型
+│   ├── requirements.txt            # ✅ Python 依赖清单
+│   ├── __init__.py                 # ✅
+│   └── utils/
+│       ├── __init__.py             # ✅
+│       └── etl.py                  # ✅ ETL 数据导入脚本
+│
+├── output/                         # ⚠️ 部分提交（除 figures/ 和 PDF）
+│   ├── host_detail.json            # ✅ 清洗后的数据（小文件，便于复现）
+│   ├── mod_detail.json             # ✅
+│   ├── disk_tsar.json              # ✅
+│   ├── pref_tsar.json              # ✅
+│   ├── timestamp_samples.json      # ✅
+│   ├── hourly_aggregation.json     # ✅
+│   ├── er_diagram.json             # ✅
+│   ├── er_diagram.md               # ✅
+│   └── figures/                    # ❌ 不提交（本地生成的 PNG 图表）
+│
+├── docs/                           # ✅ 必须提交：文档与教学材料
+│   └── 提示词/
+│       ├── README编写提示词-server-metrics-dashboard.txt
+│       └── GitHub提交提示词-server-metrics-dashboard.txt  # ← 本文件
+│
+├── server_metrics.db               # ❌ 不提交（SQLite 数据库，本地生成）
+├── *.pdf                           # ❌ 不提交（本地生成的 PDF 报告）
+├── backend.err.log                 # ❌ 不提交（运行日志）
+├── backend.out.log                 # ❌ 不提交（运行日志）
+├── __pycache__/                    # ❌ 不提交（Python 字节码缓存）
+├── .venv/  venv/  env/             # ❌ 不提交（虚拟环境）
+├── .vscode/  .idea/                # ❌ 不提交（IDE 配置）
+├── .DS_Store  Thumbs.db            # ❌ 不提交（系统文件）
+└── node_modules/                   # ❌ 不提交（如果未来引入）
+```
+
+---
+
+## 3. 第一步：检查当前环境
+
+在执行任何 Git 操作之前，务必先做以下检查，全部确认后再操作。
+
+### 3.1 确认当前目录
+
+```powershell
+# 查看当前路径
+Get-Location
+
+# 确认在项目根目录（即包含 index.html、process_data.py、backend/ 的目录）
+Get-ChildItem
+```
+
+**预期结果**：应看到 `index.html`、`process_data.py`、`backend/`、`LICENSE`、`.gitignore` 等文件。
+
+### 3.2 检查当前 Git 状态
+
+```powershell
+# 是否已经是一个 Git 仓库？
+git status --short
+
+# 查看分支状态
+git status --short --branch
+
+# 查看远程仓库
+git remote -v
+```
+
+**解读**：
+
+- 如果 `git status` 报错「not a git repository」→ 尚未初始化，需执行 `git init`
+- 如果已有 `origin` 且指向 `github.com/junzhe456/server-metrics-dashboard` → 直接复用，无需重新创建
+- 如果有其他远程（非 GitHub），保留原远程，单独为 GitHub 添加 `origin`
+
+### 3.3 检查 GitHub CLI 登录状态（如果需要创建新仓库）
+
+```powershell
+# 检查 gh 是否已登录
+gh auth status
+```
+
+**解读**：
+
+- 如果未登录 → 先运行 `gh auth login`，按提示选择 GitHub.com、HTTPS、登录
+- 如果已登录 → 可直接创建仓库
+
+---
+
+## 4. 第二步：检查与完善 .gitignore
+
+本项目的 **.gitignore 必须覆盖以下内容**。先查看现有内容，再补充缺失规则。
+
+### 4.1 查看现有 .gitignore
+
+```powershell
+Get-Content .gitignore
+```
+
+### 4.2 必须包含的忽略规则
+
+如果以下规则在现有 `.gitignore` 中**缺失**，请补充：
+
+```text
+# ==================== Python ====================
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+
+# 虚拟环境
+.venv/
+venv/
+env/
+.venv.bak/
+
+# ==================== IDE / Editor ====================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ==================== 数据库 / 运行时数据 ====================
+*.db
+*.sqlite
+*.sqlite3
+server_metrics.db
+
+# ==================== 日志 ====================
+*.log
+backend.err.log
+backend.out.log
+logs/
+
+# ==================== 本地生成的大文件产物 ====================
+*.pdf
+output/figures/
+output/figures/*.png
+
+# ==================== Node.js (未来可能引入) ====================
+node_modules/
+dist/
+dist-ssr/
+*.local
+.pnpm-store/
+
+# ==================== 测试产物 (未来可能引入) ====================
+coverage/
+test-results/
+playwright-report/
+.playwright/
+
+# ==================== 环境变量 ====================
+.env
+.env.local
+.env.*.local
+
+# ==================== 系统文件 ====================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ==================== 临时文件 ====================
+*.tmp
+*.bak
+*.cache
+temp/
+tmp/
+```
+
+### 4.3 验证忽略是否生效
+
+```powershell
+# 以下应该显示被忽略的匹配规则
+git check-ignore -v node_modules
+git check-ignore -v dist
+git check-ignore -v test-results
+git check-ignore -v server_metrics.db
+git check-ignore -v __pycache__
+git check-ignore -v "*.pdf"
+git check-ignore -v "*.log"
+
+# 以下应该**不**被忽略（即命令没有任何输出）
+git check-ignore -v package.json        # 注意：本项目暂无 package.json
+git check-ignore -v index.html
+git check-ignore -v process_data.py
+git check-ignore -v backend/app.py
+```
+
+**判断标准**：
+
+- 被忽略的文件 → 命令输出一行带路径的规则
+- **不该被忽略的文件**（如 `backend/app.py`）→ 命令没有任何输出
+
+### 4.4 特别注意的文件
+
+| 文件 | 是否提交 | 备注 |
+| :--- | :---: | :--- |
+| `index.html` | ✅ | PC 端大屏主页面 |
+| `mobile.html` | ✅ | 移动端大屏页面 |
+| `process_data.py` | ✅ | 数据清洗与聚合脚本 |
+| `generate_figures.py` | ✅ | 图表生成脚本 |
+| `generate_pdf.py` | ✅ | PDF 报告生成脚本 |
+| `backend/app.py` | ✅ | Flask API 主应用 |
+| `backend/config.py` | ✅ | 数据库配置 |
+| `backend/models.py` | ✅ | SQLAlchemy ORM 模型 |
+| `backend/utils/etl.py` | ✅ | ETL 数据导入脚本 |
+| `backend/requirements.txt` | ✅ | Python 依赖清单 |
+| `*.dat` | ✅ | 原始教学数据 |
+| `query_results_sample.txt` | ✅ | 查询示例 |
+| `output/*.json` | ✅ | 清洗后的数据（小文件） |
+| `output/er_diagram.md` | ✅ | ER 图说明文档 |
+| `docs/提示词/*.txt` | ✅ | 教学提示词 |
+| `LICENSE` | ✅ | MIT License |
+| `.gitignore` | ✅ | Git 忽略规则 |
+| `readme.md` / `README.md` | ✅ | 项目说明 |
+| `9069888090f84f0193c6ea6de147428b.png` | ✅ | 项目素材参考图 |
+| `verify.cjs` | ✅ | 验证脚本 |
+| `server_metrics.db` | ❌ | SQLite 数据库（本地生成） |
+| `output/figures/*.png` | ❌ | 本地生成的图表 PNG |
+| `*.pdf` | ❌ | 本地生成的 PDF 报告 |
+| `backend.err.log` | ❌ | 运行日志 |
+| `backend.out.log` | ❌ | 运行日志 |
+| `__pycache__/` | ❌ | Python 字节码缓存 |
+| `.venv/` | ❌ | 虚拟环境 |
+| `.vscode/` | ❌ | IDE 配置 |
+
+---
+
+## 5. 第三步：提交前的验证命令
+
+> **重要**：本项目是 Python + HTML 项目，**没有** `package.json`，**没有** `npm run lint / test / build`。
+> 请使用项目实际有的验证脚本，**不要**运行不存在的 npm 命令！
+
+### 5.1 数据清洗验证
+
+```powershell
+# 确认 Python 可用
+python --version
+
+# 运行数据清洗脚本
+python process_data.py
+
+# 预期：output/ 目录下生成 7 个 JSON 文件，且无报错
+```
+
+### 5.2 后端 Flask 应用启动验证
+
+```powershell
+# 先确认 backend 目录结构
+Get-ChildItem backend
+
+# 确认 Flask 依赖（可选，不影响提交）
+# pip install -r backend/requirements.txt
+
+# 启动 Flask（后台运行，用于快速验证）
+python backend/app.py
+
+# 打开另一个 PowerShell，测试 API 健康检查
+# curl http://127.0.0.1:5001/health 或浏览器访问
+# 预期：返回 JSON 包含 ok, engine, host_detail_rows 等字段
+
+# 验证完毕后可关闭 Flask（Ctrl+C）
+```
+
+### 5.3 前端页面访问验证
+
+```powershell
+# 在项目根目录启动静态服务
+python -m http.server 8000
+
+# 浏览器访问：
+# http://127.0.0.1:8000/index.html   (PC 端大屏)
+# http://127.0.0.1:8000/mobile.html  (移动端大屏)
+
+# 预期：页面加载正常，图表有数据，无 JavaScript 报错
+```
+
+### 5.4 若未来引入 npm / package.json
+
+**当前项目不存在 package.json，本节仅供参考**。如果后续引入前端工程化：
+
+```powershell
+# 仅当 package.json 存在时才运行
+npm install
+npm run lint
+npm run test
+npm run build
+# npm run test:e2e  (如 Playwright 环境可用)
+```
+
+> **当前不要运行这些命令**，否则会报「找不到 package.json」错误。
+
+---
+
+## 6. 第四步：正式 Git 提交
+
+请按以下顺序执行，每一步都确认输出正常后再继续。
+
+### 6.1 如果还不是 Git 仓库 — 初始化
+
+```powershell
+# 仅在 git status 报错时执行
+git init
+```
+
+### 6.2 查看当前待提交清单
+
+```powershell
+git status --short
+git status --short --branch
+
+# 查看具体的变更统计
+git diff --stat
+```
+
+**人工检查**：
+
+- ✅ 确认列表中没有 `server_metrics.db`、`__pycache__/`、`*.pdf`、`output/figures/`
+- ✅ 确认 `index.html`、`process_data.py`、`backend/`、`*.dat`、`output/*.json` 都在列表里
+- ❌ 如果出现不应该提交的文件，回到第 4 步检查 `.gitignore`
+
+### 6.3 配置 Git 用户信息（仅首次在本地使用时需要）
+
+```powershell
+# 检查当前配置
+git config user.name
+git config user.email
+
+# 如果未配置或需要修改（使用你自己的 GitHub 账号信息）
+git config user.name "你的名字"
+git config user.email "你的邮箱@example.com"
+```
+
+### 6.4 添加所有应提交的文件
+
+```powershell
+git add -A
+
+# 确认添加后的状态
+git status --short
+```
+
+**再次检查**：`git status --short` 的输出不应包含任何红色标记的「未跟踪」文件，且所有文件都应是绿色的 `A`（新增）或 `M`（修改）。
+
+### 6.5 创建提交
+
+**首次提交使用**：
+
+```powershell
+git commit -m "初始化服务器监控数据可视化大屏项目"
+```
+
+**如果是后续补充提交**（如新增提示词文件），使用更具体的提交信息：
+
+```powershell
+# 例如：新增后端 Flask API
+git commit -m "feat: 新增 Flask 后端 API（MySQL/SQLite 双支持 + RESTful 接口）"
+
+# 例如：修复移动端时间戳显示问题
+git commit -m "fix: 修复 mobile.html 时间戳 NaN 显示问题，对齐后端 API 字段"
+
+# 例如：补充 GitHub 提交流程提示词
+git commit -m "docs: 补充 GitHub 仓库提交与发布流程提示词"
+
+# 例如：更新 .gitignore 规则
+git commit -m "chore: 更新 .gitignore，排除数据库、日志和 PDF 产物"
+```
+
+### 6.6 查看提交历史（确认）
+
+```powershell
+git log --oneline -5
+```
+
+---
+
+## 7. 第五步：推送到 GitHub
+
+### 7.1 检查是否已有远程 origin
+
+```powershell
+git remote -v
+```
+
+**情况 A：已有 origin 且指向正确的 GitHub 仓库**（例如 `github.com/junzhe456/server-metrics-dashboard`）
+
+```powershell
+# 直接推送
+git push -u origin HEAD
+
+# 推送后再确认一次
+git status --short --branch
+git remote -v
+git ls-remote --heads origin
+```
+
+**情况 B：没有远程 origin，需要新建 GitHub 仓库**
+
+```powershell
+# 先确认 GitHub CLI 已登录
+gh auth status
+
+# 创建公开仓库（public）—— 使用你的 GitHub 用户名
+# 格式：gh repo create <用户名>/<仓库名> --public --source . --remote origin --push
+gh repo create junzhe456/server-metrics-dashboard --public --source . --remote origin --push
+```
+
+**情况 C：远程 origin 指向错误的仓库（如 gitee 或其他）**
+
+```powershell
+# 删除旧 origin（谨慎操作，先确认确实需要切换）
+git remote remove origin
+
+# 重新添加正确的 GitHub 远程
+git remote add origin https://github.com/junzhe456/server-metrics-dashboard.git
+
+# 推送
+git push -u origin HEAD
+```
+
+### 7.2 如果 push 超时或失败
+
+**不要立即重复创建仓库**。先检查远程状态：
+
+```powershell
+# 检查远程分支是否已存在
+git ls-remote --heads origin
+
+# 如果远程 main 分支存在
+git push origin HEAD:main --verbose
+
+# 如果远程 master 分支存在（旧约定）
+git push origin HEAD:master --verbose
+```
+
+**常见问题与处理**：
+
+| 问题 | 原因 | 处理方式 |
+| :--- | :--- | :--- |
+| `git push` 报 `Repository not found` | 远程仓库不存在或 URL 错误 | 检查 `git remote -v`，重新 `git remote add origin` |
+| `git push` 报 `Permission denied` | 未登录 GitHub 或权限不足 | `gh auth login` 重新登录；或检查 SSH Key 配置 |
+| `git push` 报 `Updates were rejected` | 远程已有其他提交，本地落后 | 先 `git pull --rebase`，再 `git push` |
+| 推送卡住很长时间 | 可能误包含了大文件 | 检查是否有 `*.pdf`、`*.db`、`node_modules/` 等大文件被提交；使用 `git ls-files | Sort-Object -Property Length -Descending | Select-Object -First 10` 检查最大文件 |
+
+### 7.3 推送完成后的验证
+
+```powershell
+# 确认分支状态
+git status --short --branch
+
+# 确认远程
+git remote -v
+
+# 确认远程分支
+git ls-remote --heads origin
+```
+
+**预期**：
+
+- `git status` 显示 `## main...origin/main`（或 `master`），没有未提交变更
+- `git remote -v` 显示 `origin  https://github.com/junzhe456/server-metrics-dashboard.git`
+- `git ls-remote --heads origin` 显示远程存在 `main`（或 `master`）分支
+
+### 7.4 浏览器确认
+
+打开 `https://github.com/junzhe456/server-metrics-dashboard` 确认：
+
+- ✅ 仓库已创建，为 Public
+- ✅ README.md 能正常显示
+- ✅ 目录结构符合预期
+- ✅ 没有 `server_metrics.db`、`*.pdf`、`node_modules/` 等不应提交的文件
+
+---
+
+## 8. PowerShell 特殊注意事项
+
+### 8.1 不要使用 `&&` 串联命令
+
+旧版 PowerShell 5.x **不支持** `&&`。请使用以下方式之一：
+
+**方式 A：分多行执行**（推荐，便于排查每一步的输出）
+
+```powershell
+git status --short
+git status --short --branch
+git remote -v
+```
+
+**方式 B：使用 PowerShell 7+ 的 `&&`**
+
+如果已经安装 PowerShell 7 或更高版本，可以直接使用 `&&`。
+
+### 8.2 PowerShell 中需要转义的字符
+
+```powershell
+# 通配符加引号，避免被 PowerShell 提前展开
+git check-ignore -v "*.pdf"
+git check-ignore -v "*.log"
+git check-ignore -v "node_modules"
+
+# 路径中有空格也要加引号
+git check-ignore -v "output/figures"
+```
+
+### 8.3 中文路径 / 文件名
+
+本项目中的 `docs/提示词/` 包含中文目录名。Git 默认可处理中文，但如果遇到 `git status` 显示乱码：
+
+```powershell
+# 强制使用 UTF-8 编码（可选，根据实际情况）
+git config --global core.quotepath false
+```
+
+---
+
+## 9. 常见风险点自查清单
+
+在执行提交和推送前，请逐项对照确认：
+
+| # | 检查项 | 状态 |
+| :-- | :--- | :--- |
+| 1 | `.gitignore` 包含 `__pycache__/`、`*.pyc` | ⬜ |
+| 2 | `.gitignore` 包含 `*.db`（SQLite 不提交） | ⬜ |
+| 3 | `.gitignore` 包含 `*.pdf` | ⬜ |
+| 4 | `.gitignore` 包含 `*.log`（运行日志） | ⬜ |
+| 5 | `.gitignore` 包含 `output/figures/` | ⬜ |
+| 6 | `.gitignore` 包含 `.venv/` / `venv/` / `env/` | ⬜ |
+| 7 | `.gitignore` 包含 `.vscode/` / `.idea/` | ⬜ |
+| 8 | `.gitignore` 包含 `node_modules/`、`dist/`（为未来扩展预留） | ⬜ |
+| 9 | `index.html` 在待提交列表中 | ⬜ |
+| 10 | `mobile.html` 在待提交列表中 | ⬜ |
+| 11 | `process_data.py` 在待提交列表中 | ⬜ |
+| 12 | `backend/` 目录在待提交列表中 | ⬜ |
+| 13 | `*.dat` 原始数据在待提交列表中 | ⬜ |
+| 14 | `output/*.json` 在待提交列表中 | ⬜ |
+| 15 | `LICENSE` 在待提交列表中 | ⬜ |
+| 16 | `docs/提示词/*.txt` 在待提交列表中 | ⬜ |
+| 17 | `server_metrics.db` **不在**待提交列表 | ⬜ |
+| 18 | `*.pdf` **不在**待提交列表 | ⬜ |
+| 19 | `*.log` **不在**待提交列表 | ⬜ |
+| 20 | `output/figures/` **不在**待提交列表 | ⬜ |
+| 21 | `python process_data.py` 能正常执行并生成 output/*.json | ⬜ |
+| 22 | `python backend/app.py` 能正常启动 Flask API | ⬜ |
+| 23 | `python -m http.server 8000` 后浏览器访问大屏正常 | ⬜ |
+| 24 | GitHub CLI（gh）已登录（如需要创建新仓库） | ⬜ |
+
+---
+
+## 10. 完整的推荐提交顺序（一键复制执行指南）
+
+> **首次提交（初始化仓库）**：
+
+```powershell
+# 1. 确认在正确的目录
+Get-Location
+Get-ChildItem
+
+# 2. 检查 .gitignore，补充缺失规则（参考第 4.2 节）
+Get-Content .gitignore
+
+# 3. 验证忽略
+git check-ignore -v "*.pdf"
+git check-ignore -v "server_metrics.db"
+git check-ignore -v "__pycache__"
+
+# 4. 验证代码
+python --version
+python process_data.py
+
+# 5. 初始化 Git 仓库（如果尚未初始化）
+git init
+
+# 6. 添加所有文件
+git add -A
+
+# 7. 确认状态
+git status --short
+
+# 8. 提交
+git commit -m "初始化服务器监控数据可视化大屏项目"
+
+# 9. 确认提交成功
+git log --oneline -3
+
+# 10. 检查 GitHub 登录状态
+gh auth status
+
+# 11. 创建远程仓库并推送（首次）
+# 注意：将 junzhe456 替换为你实际的 GitHub 用户名
+gh repo create junzhe456/server-metrics-dashboard --public --source . --remote origin --push
+
+# 12. 推送后的验证
+git status --short --branch
+git remote -v
+git ls-remote --heads origin
+```
+
+> **后续提交（已有仓库时）**：
+
+```powershell
+# 1. 查看变更
+git status --short
+
+# 2. 添加变更文件
+git add -A
+
+# 3. 确认状态
+git status --short
+
+# 4. 提交（使用具体的提交信息）
+git commit -m "docs: 补充 GitHub 仓库提交与发布流程提示词"
+
+# 5. 推送
+git push -u origin HEAD
+
+# 6. 验证
+git status --short --branch
+```
+
+---
+
+## 11. 完成后的交付清单
+
+执行完成后，请整理一份简要说明，包含：
+
+- **本地项目路径**：例如 `f:\USTB\生产实习\数据建模作业`
+- **当前 Git 分支**：例如 `main` 或 `master`
+- **GitHub 仓库地址**：例如 `https://github.com/junzhe456/server-metrics-dashboard`
+- **本次 commit hash**：通过 `git rev-parse --short HEAD` 获取
+- **已推送到哪个远程分支**：例如 `origin/main`
+- **已运行的验证命令**：列出实际执行过的命令及其结果
+- **哪些文件被提交**：可通过 `git show --stat HEAD` 快速查看
+- **哪些文件被忽略**：确认关键文件（`server_metrics.db`、`*.pdf`、`*.log`、`node_modules/` 等）确实没有被提交
+- **当前 `git status --short --branch` 结果**：工作区是否干净
+- **是否存在未完成事项**：如「GitHub 仓库描述尚未设置」、「GitHub Pages 尚未启用」等
+
+---
+
+## 12. GitHub 仓库发布后的可选优化（建议项）
+
+完成推送后，可以在 GitHub 网页上做一些收尾工作（非必需，建议做）：
+
+### 12.1 设置仓库描述（About）
+
+```text
+Description: 服务器监控数据可视化大屏 | 教学型数据大屏项目
+Website:     （留空，或填写 GitHub Pages 地址，如果未来启用）
+Topics:      data-visualization, echarts, flask, data-modeling, python, dashboard, teaching-materials
+```
+
+### 12.2 给仓库打一个初始版本 tag（可选）
+
+```powershell
+git tag -a v0.1.0 -m "初始发布版本：包含 .dat 清洗、E-R 图、大屏、PDF 报告、Flask API"
+git push origin v0.1.0
+```
+
+### 12.3 启用 GitHub Pages（可选，用于在线预览大屏）
+
+```text
+Settings → Pages
+Source: Deploy from a branch
+Branch: main / (root)
+```
+
+启用后可通过 `https://<用户名>.github.io/server-metrics-dashboard/` 在线预览（注意：后端 Flask API 需要本地运行才能加载动态数据）。
+
+### 12.4 创建 GitHub Release（可选）
+
+在 GitHub Releases 页面创建首个 Release，附上：
+
+- Tag: `v0.1.0`
+- 标题: `server-metrics-dashboard v0.1.0`
+- 说明: 列出本次包含的核心功能
+
+---
+
+## 13. 关键提醒（再次强调）
+
+1. **不要提交 `server_metrics.db`** — SQLite 数据库是本地运行时生成的，仓库中有 `process_data.py` + `*.dat` 即可复现
+2. **不要提交 `*.pdf`** — PDF 报告通过 `generate_pdf.py` 本地生成
+3. **不要提交 `output/figures/*.png`** — 图表通过 `generate_figures.py` 本地生成
+4. **不要提交 `*.log`** — 运行日志仅在本地调试时使用
+5. **不要运行不存在的 `npm run ...` 命令** — 本项目是 Python 项目，不是 Node.js 项目
+6. **提交信息要具体** — 不要只用「更新」「修改」这类模糊描述
+7. **推送前务必确认 `.gitignore` 生效** — 否则大文件一旦提交进历史，后续清理非常麻烦
+8. **不要使用 `git reset --hard`** — 除非你明确知道自己在做什么
+9. **首次推送建议用 `gh repo create` 一键完成** — 避免手动创建仓库后再关联的繁琐步骤
+
+---
+
+## 14. 参考材料（执行本提示词时的参考）
+
+- `index.html`：PC 端大屏页面结构
+- `mobile.html`：移动端大屏页面结构
+- `process_data.py`：数据清洗逻辑
+- `generate_figures.py`：图表生成逻辑
+- `generate_pdf.py`：PDF 报告生成逻辑
+- `backend/app.py`：Flask API 应用
+- `backend/models.py`：数据库 ORM 模型
+- `backend/utils/etl.py`：ETL 数据导入脚本
+- `output/*.json`：清洗后的数据结构
+- `LICENSE`：MIT License
+- `.gitignore`：当前忽略规则
+- GitHub 仓库地址（预期目标）：`https://github.com/junzhe456/server-metrics-dashboard`
+
+> 提示：本提示词文件位于 `docs/提示词/`，供内部参考使用。

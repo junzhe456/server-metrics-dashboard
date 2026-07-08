@@ -1,4 +1,4 @@
-# Byte-compiled / optimized files
+# ==================== Python ====================
 __pycache__/
 *.py[cod]
 *.so
@@ -9,15 +9,54 @@ __pycache__/
 venv/
 env/
 
-# IDE
+# ==================== IDE / Editor ====================
 .vscode/
 .idea/
 *.swp
 
-# Large binary outputs (可本地生成)
+# ==================== 数据库 / 运行时数据 ====================
+*.db
+*.sqlite
+*.sqlite3
+server_metrics.db
+
+# ==================== 日志 ====================
+*.log
+backend.err.log
+backend.out.log
+logs/
+
+# ==================== 本地生成的大文件产物 ====================
 *.pdf
 output/figures/
+output/figures/*.png
+docs/screenshots/
+docs/screenshots/*.png
 
-# OS
+# ==================== Node.js (未来可能引入) ====================
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# ==================== 测试产物 (未来可能引入) ====================
+coverage/
+test-results/
+playwright-report/
+
+# ==================== 环境变量 ====================
+.env
+.env.local
+.env.*.local
+
+# ==================== OS ====================
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# ==================== 临时文件 ====================
+*.tmp
+*.bak
+*.cache
+temp/
+tmp/
